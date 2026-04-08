@@ -1,0 +1,473 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		14A0E5CF9A2E4B9DB00C4E11 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14A0E5CF9A2E4B9DB00C4E10 /* AVFoundation.framework */; };
+		3C8354F37A2589A57FA15D1D /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3652EC48F4069A10FCF40FAE /* WebKit.framework */; };
+		3EFF039FB5A4C6BC6940E7DE /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1EC70F34A88F5CD729D9B42 /* MetalKit.framework */; };
+		4CB275C492497061CAC6767B /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B063DDDC5A849D7FC995AEB /* CoreGraphics.framework */; };
+		5A2A92103E8991BB75C74F16 /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 446F746307464117E249621D /* libapp.a */; };
+		7A4D7451073F98C9E9F7CCF3 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8EECBB01112B2AD6BF83904B /* Metal.framework */; };
+		86954DC0638F934BA8FC81E8 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 23EEEF01EDA68164672134F5 /* assets */; };
+		88BDD777D0925B069AC35CD6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D13D23D3DA4F7A5F5B87A41 /* Assets.xcassets */; };
+		8D1CF66173EDAE19F49DBC9A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EB7CF03189BC8FAE9825A196 /* UIKit.framework */; };
+		A067DFFDF011A287ABD49E14 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E61FA9EE07B189F4ACEDEFC /* Security.framework */; };
+		A711E277A1BAC05394D977F6 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E2695E29D17B57031E1047D /* QuartzCore.framework */; };
+		BCDAF80B993E22357D55E855 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7EA7C9CFEC4BB6D1AB81B0A8 /* LaunchScreen.storyboard */; };
+		DDA9E89AEE623F42C665F6CC /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = FA8EAF896BE315E4FBA17785 /* main.mm */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		14A0E5CF9A2E4B9DB00C4E10 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		23EEEF01EDA68164672134F5 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
+		3652EC48F4069A10FCF40FAE /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		3AEBCFF7BE58723FA5298316 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
+		3CEAD900080C93ECA1B5F387 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		3E61FA9EE07B189F4ACEDEFC /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		446F746307464117E249621D /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		5154BD79A1E229C14AA2348A /* server.rs */ = {isa = PBXFileReference; path = server.rs; sourceTree = "<group>"; };
+		5B063DDDC5A849D7FC995AEB /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		5E2695E29D17B57031E1047D /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		7D13D23D3DA4F7A5F5B87A41 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7EA7C9CFEC4BB6D1AB81B0A8 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		88D5574E1F089813CEDE2F53 /* webtorrent-player_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "webtorrent-player_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8EECBB01112B2AD6BF83904B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		A1EC70F34A88F5CD729D9B42 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		BD1C271FD819B0EA9EF44A46 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
+		CED7B90257A18A23966B21A9 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
+		D1146D9CBE4E15FF42D4F24A /* webtorrent-player_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "webtorrent-player_iOS.entitlements"; sourceTree = "<group>"; };
+		EB7CF03189BC8FAE9825A196 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		EB9514CAB017F90CDD930870 /* state.rs */ = {isa = PBXFileReference; path = state.rs; sourceTree = "<group>"; };
+		FA8EAF896BE315E4FBA17785 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		50489FCB61274CAF92ACCEF0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14A0E5CF9A2E4B9DB00C4E11 /* AVFoundation.framework in Frameworks */,
+				5A2A92103E8991BB75C74F16 /* libapp.a in Frameworks */,
+				4CB275C492497061CAC6767B /* CoreGraphics.framework in Frameworks */,
+				7A4D7451073F98C9E9F7CCF3 /* Metal.framework in Frameworks */,
+				3EFF039FB5A4C6BC6940E7DE /* MetalKit.framework in Frameworks */,
+				A711E277A1BAC05394D977F6 /* QuartzCore.framework in Frameworks */,
+				A067DFFDF011A287ABD49E14 /* Security.framework in Frameworks */,
+				8D1CF66173EDAE19F49DBC9A /* UIKit.framework in Frameworks */,
+				3C8354F37A2589A57FA15D1D /* WebKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		021D5BD5241902654F8CA524 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				3AEBCFF7BE58723FA5298316 /* lib.rs */,
+				CED7B90257A18A23966B21A9 /* main.rs */,
+				5154BD79A1E229C14AA2348A /* server.rs */,
+				EB9514CAB017F90CDD930870 /* state.rs */,
+			);
+			name = src;
+			path = ../../src;
+			sourceTree = "<group>";
+		};
+		02FC402519FA96AB0D0FC234 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				B97424B78089AEA3B157AFA9 /* webtorrent-player */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		8026EA92D26CBF463316AF35 /* bindings */ = {
+			isa = PBXGroup;
+			children = (
+				BD1C271FD819B0EA9EF44A46 /* bindings.h */,
+			);
+			path = bindings;
+			sourceTree = "<group>";
+		};
+		9D875B6FE84048B5AAC8EF8E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				14A0E5CF9A2E4B9DB00C4E10 /* AVFoundation.framework */,
+				5B063DDDC5A849D7FC995AEB /* CoreGraphics.framework */,
+				446F746307464117E249621D /* libapp.a */,
+				8EECBB01112B2AD6BF83904B /* Metal.framework */,
+				A1EC70F34A88F5CD729D9B42 /* MetalKit.framework */,
+				5E2695E29D17B57031E1047D /* QuartzCore.framework */,
+				3E61FA9EE07B189F4ACEDEFC /* Security.framework */,
+				EB7CF03189BC8FAE9825A196 /* UIKit.framework */,
+				3652EC48F4069A10FCF40FAE /* WebKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B97424B78089AEA3B157AFA9 /* webtorrent-player */ = {
+			isa = PBXGroup;
+			children = (
+				FA8EAF896BE315E4FBA17785 /* main.mm */,
+				8026EA92D26CBF463316AF35 /* bindings */,
+			);
+			path = "webtorrent-player";
+			sourceTree = "<group>";
+		};
+		BCC9076232509483C022D4FD /* webtorrent-player_iOS */ = {
+			isa = PBXGroup;
+			children = (
+				3CEAD900080C93ECA1B5F387 /* Info.plist */,
+				D1146D9CBE4E15FF42D4F24A /* webtorrent-player_iOS.entitlements */,
+			);
+			path = "webtorrent-player_iOS";
+			sourceTree = "<group>";
+		};
+		F3B866627AD3886A2E6931EC /* Externals */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Externals;
+			sourceTree = "<group>";
+		};
+		F9154812AF69FE8D4645713E = {
+			isa = PBXGroup;
+			children = (
+				23EEEF01EDA68164672134F5 /* assets */,
+				7D13D23D3DA4F7A5F5B87A41 /* Assets.xcassets */,
+				7EA7C9CFEC4BB6D1AB81B0A8 /* LaunchScreen.storyboard */,
+				F3B866627AD3886A2E6931EC /* Externals */,
+				02FC402519FA96AB0D0FC234 /* Sources */,
+				021D5BD5241902654F8CA524 /* src */,
+				BCC9076232509483C022D4FD /* webtorrent-player_iOS */,
+				9D875B6FE84048B5AAC8EF8E /* Frameworks */,
+				FD6F16204C82006557E0C4DB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FD6F16204C82006557E0C4DB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				88D5574E1F089813CEDE2F53 /* webtorrent-player_iOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA5D1C2BE7A537A9EDEA5AAA /* webtorrent-player_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5A8154D9ADBA0FA6B27A8653 /* Build configuration list for PBXNativeTarget "webtorrent-player_iOS" */;
+			buildPhases = (
+				FDB5F62043280419E4D6F60A /* Build Rust Code */,
+				374C058259ECE97EB9FC4A58 /* Sources */,
+				8786372F7C7C408FBACF754A /* Resources */,
+				50489FCB61274CAF92ACCEF0 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "webtorrent-player_iOS";
+			packageProductDependencies = (
+			);
+			productName = "webtorrent-player_iOS";
+			productReference = 88D5574E1F089813CEDE2F53 /* webtorrent-player_iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BB33CAA606FC2C41CFEAC1B0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					AA5D1C2BE7A537A9EDEA5AAA = {
+						DevelopmentTeam = HUJ467VC3N;
+					};
+				};
+			};
+			buildConfigurationList = DCE1C56C509CB86BA10B090D /* Build configuration list for PBXProject "webtorrent-player" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = F9154812AF69FE8D4645713E;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = FD6F16204C82006557E0C4DB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA5D1C2BE7A537A9EDEA5AAA /* webtorrent-player_iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8786372F7C7C408FBACF754A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				88BDD777D0925B069AC35CD6 /* Assets.xcassets in Resources */,
+				BCDAF80B993E22357D55E855 /* LaunchScreen.storyboard in Resources */,
+				86954DC0638F934BA8FC81E8 /* assets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		FDB5F62043280419E4D6F60A /* Build Rust Code */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust Code";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a",
+				"$(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		374C058259ECE97EB9FC4A58 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDA9E89AEE623F42C665F6CC /* main.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		20D9D6A08BA2D47953AF49D6 /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "webtorrent-player_iOS/webtorrent-player_iOS.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = "HUJ467VC3N";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = "webtorrent-player_iOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(DT_TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(DT_TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.sternelee.webtorrentplayer;
+				PRODUCT_NAME = "webtorrentplayer";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+			};
+			name = release;
+		};
+		2F9B52B79B15F8CFF3ACD6DD /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = release;
+		};
+		C89D38CA594B24E29F7ED215 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "webtorrent-player_iOS/webtorrent-player_iOS.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = "HUJ467VC3N";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = "webtorrent-player_iOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(DT_TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(DT_TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.sternelee.webtorrentplayer;
+				PRODUCT_NAME = "webtorrentplayer";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+			};
+			name = debug;
+		};
+		EECAC6485668D1A2CF9CBA46 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5A8154D9ADBA0FA6B27A8653 /* Build configuration list for PBXNativeTarget "webtorrent-player_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C89D38CA594B24E29F7ED215 /* debug */,
+				20D9D6A08BA2D47953AF49D6 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+		DCE1C56C509CB86BA10B090D /* Build configuration list for PBXProject "webtorrent-player" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EECAC6485668D1A2CF9CBA46 /* debug */,
+				2F9B52B79B15F8CFF3ACD6DD /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BB33CAA606FC2C41CFEAC1B0 /* Project object */;
+}
