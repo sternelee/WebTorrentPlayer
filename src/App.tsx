@@ -1124,7 +1124,7 @@ function App() {
   return (
     <div class="mx-auto flex min-h-screen w-full max-w-md flex-col bg-slate-950 text-white pt-safe">
       <Show when={!playerFullscreen()}>
-        <header class="sticky top-0 z-20 border-b border-white/10 bg-slate-950/90 px-4 pb-4 pt-safe-top backdrop-blur">
+        <header class="border-b border-white/10 bg-slate-950/90 px-4 pb-4 backdrop-blur">
           <div class="pt-4">
             <p class="text-xs uppercase tracking-[0.28em] text-sky-400">
               WebTorrentPlayer
@@ -1236,7 +1236,7 @@ function App() {
           class={`overflow-hidden bg-black shadow-2xl shadow-black/30 ${
             playerFullscreen()
               ? "fixed inset-0 z-40 rounded-none border-0"
-              : "rounded-xl border border-white/10"
+              : "player-sticky-top sticky z-30 rounded-xl border border-white/10"
           }`}
         >
           <div

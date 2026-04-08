@@ -39,3 +39,7 @@ body {
 #root {
   min-height: 100vh;
 }
+
+.player-sticky-top {
+  top: env(safe-area-inset-top, 0px);
+}
