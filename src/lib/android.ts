@@ -20,6 +20,8 @@ interface AndroidBridge {
   upsertForegroundSession(payloadJson: string): void;
   stopForegroundSession(): void;
   getNetworkStatus(): string;
+  enterLandscapeFullscreen(): void;
+  exitLandscapeFullscreen(): void;
 }
 
 declare global {
@@ -82,4 +84,19 @@ export function syncAndroidForegroundSession(
   } else {
     nativeBridge.stopForegroundSession();
   }
+}
+
+export function syncAndroidPlaybackOrientation(isLandscape: boolean) {
+  const nativeBridge = bridge();
+  if (!nativeBridge) {
+    return false;
+  }
+
+  if (isLandscape) {
+    nativeBridge.enterLandscapeFullscreen();
+  } else {
+    nativeBridge.exitLandscapeFullscreen();
+  }
+
+  return true;
 }

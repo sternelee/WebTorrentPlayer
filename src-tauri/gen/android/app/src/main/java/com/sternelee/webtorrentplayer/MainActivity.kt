@@ -2,6 +2,7 @@ package com.sternelee.webtorrentplayer
 
 import android.Manifest
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
@@ -159,5 +160,19 @@ class MainActivity : TauriActivity() {
 
     @JavascriptInterface
     fun getNetworkStatus(): String = currentNetworkStatusJson().toString()
+
+    @JavascriptInterface
+    fun enterLandscapeFullscreen() {
+      runOnUiThread {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+      }
+    }
+
+    @JavascriptInterface
+    fun exitLandscapeFullscreen() {
+      runOnUiThread {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+      }
+    }
   }
 }

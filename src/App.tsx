@@ -37,6 +37,7 @@ import {
   getAndroidNetworkStatus,
   hasAndroidBridge,
   listenToAndroidNetworkStatus,
+  syncAndroidPlaybackOrientation,
   syncAndroidForegroundSession,
   type AndroidNetworkStatus,
 } from "./lib/android";
@@ -768,6 +769,23 @@ function App() {
     schedulePlayerChromeHide(delayMs);
   }
 
+  async function syncPlaybackOrientation(isFullscreen: boolean) {
+    if (syncAndroidPlaybackOrientation(isFullscreen)) {
+      return;
+    }
+
+    const orientation = globalThis.screen?.orientation;
+    if (!orientation?.lock) {
+      return;
+    }
+
+    try {
+      await orientation.lock(isFullscreen ? "landscape" : "portrait");
+    } catch (orientationError) {
+      console.warn("Failed to update playback orientation", orientationError);
+    }
+  }
+
   async function handleToggleFullscreen() {
     setPlayerFullscreen((value) => !value);
     revealPlayerChrome(3200);
@@ -1027,6 +1045,22 @@ function App() {
     onCleanup(() => {
       document.body.style.overflow = "";
     });
+  });
+
+  let previousFullscreen = playerFullscreen();
+  createEffect(() => {
+    const fullscreen = playerFullscreen();
+
+    if (fullscreen === previousFullscreen) {
+      return;
+    }
+
+    previousFullscreen = fullscreen;
+    void syncPlaybackOrientation(fullscreen);
+  });
+
+  onCleanup(() => {
+    void syncPlaybackOrientation(false);
   });
 
   createEffect(() => {
