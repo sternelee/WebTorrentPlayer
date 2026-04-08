@@ -41,6 +41,7 @@ import {
   syncAndroidForegroundSession,
   type AndroidNetworkStatus,
 } from "./lib/android";
+import { i18nStore } from "./lib/i18n";
 
 type TorrentPlaybackState = "parsing" | "downloading" | "seeding" | "paused";
 
@@ -253,15 +254,15 @@ function formatPlaybackTime(seconds: number) {
 function stateLabel(state: TorrentPlaybackState | undefined) {
   switch (state) {
     case "parsing":
-      return "解析中";
+      return i18nStore.t("player.parsing");
     case "downloading":
-      return "下载中";
+      return i18nStore.t("player.downloading");
     case "seeding":
-      return "做种中";
+      return i18nStore.t("player.seeding");
     case "paused":
-      return "已暂停";
+      return i18nStore.t("player.paused");
     default:
-      return "待机";
+      return i18nStore.t("common.standby");
   }
 }
 
@@ -284,21 +285,25 @@ function isNetworkUnavailable(status: AndroidNetworkStatus | null) {
 }
 
 function formatNetworkLabel(status: AndroidNetworkStatus | null) {
-  if (!status) return "未知";
-  if (isNetworkUnavailable(status)) return "离线";
+  if (!status) return i18nStore.t("common.unknown");
+  if (isNetworkUnavailable(status)) return i18nStore.t("common.offline");
 
   const [primaryTransport] = status.transports;
   switch (primaryTransport) {
     case "wifi":
-      return status.metered ? "Wi-Fi（计费）" : "Wi-Fi";
+      return status.metered
+        ? i18nStore.t("common.wifiMetered")
+        : i18nStore.t("common.wifi");
     case "cellular":
-      return "蜂窝网络";
+      return i18nStore.t("common.cellular");
     case "ethernet":
-      return "以太网";
+      return i18nStore.t("common.ethernet");
     case "vpn":
-      return "VPN";
+      return i18nStore.t("common.vpn");
     default:
-      return status.metered ? "已连接（计费）" : "已连接";
+      return status.metered
+        ? i18nStore.t("common.connectedMetered")
+        : i18nStore.t("common.connected");
   }
 }
 
@@ -441,7 +446,7 @@ function App() {
       if (latestStatus?.metered && !isNetworkUnavailable(latestStatus)) {
         setNetworkNotice({
           tone: "info",
-          text: "当前网络为计费连接，边下边播可能消耗较多流量。",
+          text: i18nStore.t("torrent.meteredWarning"),
         });
       } else {
         setNetworkNotice(null);
@@ -463,7 +468,7 @@ function App() {
 
       setNetworkNotice({
         tone: "warning",
-        text: "当前网络不可用，BT 连接会暂停；恢复后会自动重试播放与下载。",
+        text: i18nStore.t("torrent.networkUnavailable"),
       });
       return;
     }
@@ -473,8 +478,8 @@ function App() {
       setTemporaryNetworkNotice({
         tone: "success",
         text: status.metered
-          ? "网络已恢复，正在重连；当前为计费网络。"
-          : "网络已恢复，正在重连 peers 与流媒体。",
+          ? i18nStore.t("torrent.networkRestoredMetered")
+          : i18nStore.t("torrent.networkRestored"),
       });
       void recoverFromReconnect();
       return;
@@ -485,7 +490,7 @@ function App() {
       status.metered
         ? {
             tone: "info",
-            text: "当前网络为计费连接，边下边播可能消耗较多流量。",
+            text: i18nStore.t("torrent.meteredWarning"),
           }
         : null,
     );
@@ -494,7 +499,7 @@ function App() {
   async function handleStart() {
     const rawInput = magnet().trim();
     if (!isSupportedTorrentInput(rawInput)) {
-      setError("请输入有效的 magnet 链接或 .torrent 地址。");
+      setError(i18nStore.t("torrent.invalidInput"));
       return;
     }
 
@@ -534,7 +539,7 @@ function App() {
 
   async function handleTorrentFile(file: File) {
     if (!isTorrentFile(file)) {
-      setError("请拖入 .torrent 文件。");
+      setError(i18nStore.t("torrent.invalidFile"));
       return;
     }
 
@@ -1156,13 +1161,24 @@ function App() {
   });
 
   return (
-    <div class="mx-auto flex min-h-screen w-full max-w-md flex-col bg-slate-950 text-white">
+    <div class="mx-auto flex min-h-screen w-full flex-col bg-slate-950 text-white">
       <Show when={!playerFullscreen()}>
         <header class="border-b border-white/10 bg-slate-950/90 px-4 pb-4 backdrop-blur">
-          <div class="pt-4">
+          <div class="flex items-center justify-between pt-4">
             <p class="text-xs uppercase tracking-[0.28em] text-sky-400">
               WebTorrentPlayer
             </p>
+            <button
+              type="button"
+              class="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+              onClick={() =>
+                i18nStore.setLocale(
+                  i18nStore.locale() === "en" ? "zh-CN" : "en",
+                )
+              }
+            >
+              {i18nStore.locale() === "en" ? "中文" : "EN"}
+            </button>
           </div>
 
           <div
@@ -1189,7 +1205,7 @@ function App() {
             <div class="flex items-center gap-2">
               <input
                 class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-400"
-                placeholder="粘贴 magnet:?、.torrent 地址，或拖入 .torrent 文件"
+                placeholder={i18nStore.t("torrent.pasteMagnetHint")}
                 value={magnet()}
                 onInput={(event) => setMagnet(event.currentTarget.value)}
                 onKeyDown={(event) =>
@@ -1214,16 +1230,16 @@ function App() {
 
             <div class="mt-2 flex items-center justify-between gap-2">
               <p class="text-xs text-slate-400">
-                支持 magnet 链接、远程 .torrent 地址和本地 .torrent 文件。
+                {i18nStore.t("torrent.supportsMagnet")}
               </p>
               <button
                 type="button"
-                class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
+                class="inline-flex items-center shrink-0 gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
                 onClick={() => torrentFileInput?.click()}
                 disabled={isSubmitting()}
               >
                 <FileUp class="h-4 w-4" />
-                选择文件
+                {i18nStore.t("common.selectFile")}
               </button>
               <input
                 ref={torrentFileInput}
@@ -1237,7 +1253,7 @@ function App() {
 
           <Show when={isDraggingTorrent()}>
             <p class="mt-2 text-xs text-sky-300">
-              松手即可导入 .torrent 文件。
+              {i18nStore.t("torrent.dragToImport")}
             </p>
           </Show>
 
@@ -1299,12 +1315,12 @@ function App() {
                   <Video class="h-10 w-10" />
                   <div class="text-center">
                     <p class="text-sm font-medium text-slate-300">
-                      等待可播放文件
+                      {i18nStore.t("player.waitingForFile")}
                     </p>
                     <p class="mt-1 text-xs text-slate-500">
                       {metadata()
-                        ? "请选择或等待视频文件准备完成"
-                        : "先输入磁力链接"}
+                        ? i18nStore.t("player.selectOrWait")
+                        : i18nStore.t("player.enterMagnetLink")}
                     </p>
                   </div>
                 </div>
@@ -1343,10 +1359,10 @@ function App() {
                   <div class="mb-3 flex items-center justify-between gap-3 text-[11px] text-slate-300">
                     <span>
                       {playerWaiting()
-                        ? "缓冲中"
+                        ? i18nStore.t("player.buffering")
                         : playerPaused()
-                          ? "已暂停"
-                          : "播放中"}
+                          ? i18nStore.t("player.paused")
+                          : i18nStore.t("player.playing")}
                     </span>
                     <span>
                       {formatPlaybackTime(playerCurrentTime())} /{" "}
@@ -1395,7 +1411,11 @@ function App() {
                         void handleTogglePlayback();
                       }}
                       disabled={!selectedVideoSource()}
-                      aria-label={playerPaused() ? "播放" : "暂停"}
+                      aria-label={
+                        playerPaused()
+                          ? i18nStore.t("player.play")
+                          : i18nStore.t("player.pause")
+                      }
                     >
                       <Show
                         when={playerPaused()}
@@ -1412,7 +1432,11 @@ function App() {
                         revealPlayerChrome(3200);
                         handleToggleMute();
                       }}
-                      aria-label={playerMuted() ? "取消静音" : "静音"}
+                      aria-label={
+                        playerMuted()
+                          ? i18nStore.t("player.unmute")
+                          : i18nStore.t("player.mute")
+                      }
                     >
                       <Show
                         when={playerMuted() || visiblePlayerVolume() === 0}
@@ -1434,7 +1458,7 @@ function App() {
                           revealPlayerChrome(3200);
                           handleVolumeChange(event);
                         }}
-                        aria-label="音量"
+                        aria-label={i18nStore.t("player.volume")}
                       />
                       <span class="w-10 shrink-0 text-right text-[10px] text-slate-300">
                         {Math.round(visiblePlayerVolume() * 100)}%
@@ -1455,7 +1479,9 @@ function App() {
                         }}
                         disabled={subtitleFiles().length === 0}
                         aria-label={
-                          selectedSubtitleFile() ? "切换字幕" : "打开字幕菜单"
+                          selectedSubtitleFile()
+                            ? i18nStore.t("player.toggleSubtitles")
+                            : i18nStore.t("player.openSubtitleMenu")
                         }
                         aria-haspopup="menu"
                         aria-expanded={isSubtitleMenuOpen()}
@@ -1467,10 +1493,11 @@ function App() {
                         <div class="absolute bottom-full right-0 z-10 mb-3 w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl shadow-black/40 backdrop-blur">
                           <div class="border-b border-white/10 px-4 py-3">
                             <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
-                              字幕轨
+                              {i18nStore.t("player.subtitleTrack")}
                             </p>
                             <p class="mt-1 text-sm text-slate-300">
-                              {selectedSubtitleFile()?.name ?? "当前已关闭字幕"}
+                              {selectedSubtitleFile()?.name ??
+                                i18nStore.t("player.subtitlesOff")}
                             </p>
                           </div>
                           <div class="max-h-64 overflow-y-auto p-2">
@@ -1483,9 +1510,13 @@ function App() {
                               }`}
                               onClick={() => handleSelectSubtitle(null)}
                             >
-                              <span>关闭字幕</span>
+                              <span>
+                                {i18nStore.t("player.turnOffSubtitles")}
+                              </span>
                               <Show when={selectedSubtitleIndex() === null}>
-                                <span class="text-xs text-sky-300">当前</span>
+                                <span class="text-xs text-sky-300">
+                                  {i18nStore.t("player.current")}
+                                </span>
                               </Show>
                             </button>
                             <For each={subtitleFiles()}>
@@ -1510,7 +1541,7 @@ function App() {
                                     }
                                   >
                                     <span class="shrink-0 text-xs text-sky-300">
-                                      当前
+                                      {i18nStore.t("player.current")}
                                     </span>
                                   </Show>
                                 </button>
@@ -1529,7 +1560,11 @@ function App() {
                         void handleToggleFullscreen();
                       }}
                       disabled={!selectedVideoSource()}
-                      aria-label={playerFullscreen() ? "退出全屏" : "进入全屏"}
+                      aria-label={
+                        playerFullscreen()
+                          ? i18nStore.t("player.exitFullscreen")
+                          : i18nStore.t("player.enterFullscreen")
+                      }
                     >
                       <Show
                         when={playerFullscreen()}
@@ -1550,11 +1585,14 @@ function App() {
             <div class="flex items-center justify-between gap-3">
               <div>
                 <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
-                  媒体文件
+                  {i18nStore.t("player.mediaFile")}
                 </p>
                 <h2 class="mt-1 text-base font-semibold">
-                  <Show when={videoFiles().length > 0} fallback="等待元数据">
-                    可播放文件
+                  <Show
+                    when={videoFiles().length > 0}
+                    fallback={i18nStore.t("player.waitingForMetadata")}
+                  >
+                    {i18nStore.t("player.playableFiles")}
                   </Show>
                 </h2>
               </div>
@@ -1568,7 +1606,7 @@ function App() {
                 when={metadata()}
                 fallback={
                   <p class="text-sm text-slate-500">
-                    磁力元数据解析完成后会在这里展示文件列表。
+                    {i18nStore.t("player.metadataHint")}
                   </p>
                 }
               >
@@ -1601,17 +1639,19 @@ function App() {
                           <div class="mt-1 flex items-center gap-2 text-xs text-slate-400">
                             <span>{formatBytes(file.sizeBytes)}</span>
                             <span>#{file.index}</span>
+                            <span
+                              class={`ml-auto shrink-0 rounded-full px-2 py-1 text-[11px] ${
+                                file.isVideo
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : "bg-slate-700 text-slate-300"
+                              }`}
+                            >
+                              {file.isVideo
+                                ? i18nStore.t("player.video")
+                                : i18nStore.t("player.nonVideo")}
+                            </span>
                           </div>
                         </div>
-                        <span
-                          class={`ml-3 shrink-0 rounded-full px-2 py-1 text-[11px] ${
-                            file.isVideo
-                              ? "bg-emerald-500/15 text-emerald-300"
-                              : "bg-slate-700 text-slate-300"
-                          }`}
-                        >
-                          {file.isVideo ? "视频" : "非视频"}
-                        </span>
                       </button>
                     );
                   }}
@@ -1624,7 +1664,9 @@ function App() {
             <div class="rounded-3xl border border-white/10 bg-slate-900/80 p-4">
               <div class="flex items-center gap-2 text-sky-400">
                 <Download class="h-4 w-4" />
-                <span class="text-xs uppercase tracking-[0.2em]">下载速度</span>
+                <span class="text-xs uppercase tracking-[0.2em]">
+                  {i18nStore.t("common.downloadSpeed")}
+                </span>
               </div>
               <p class="mt-3 text-lg font-semibold">
                 {formatSpeed(stats()?.downloadSpeedKbps ?? 0)}
@@ -1646,13 +1688,14 @@ function App() {
             <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
-                  状态
+                  {i18nStore.t("common.status")}
                 </p>
                 <p class="mt-2 text-lg font-semibold">
                   {stateLabel(stats()?.state)}
                 </p>
                 <p class="mt-1 text-xs text-slate-400">
-                  网络：{formatNetworkLabel(networkStatus())}
+                  {i18nStore.t("common.network")}:{" "}
+                  {formatNetworkLabel(networkStatus())}
                 </p>
               </div>
               <div class="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-300">
@@ -1668,7 +1711,7 @@ function App() {
                 disabled={!currentInfoHash() || stats()?.state === "paused"}
               >
                 <CirclePause class="h-4 w-4" />
-                暂停
+                {i18nStore.t("common.pause")}
               </button>
               <button
                 type="button"
@@ -1677,7 +1720,7 @@ function App() {
                 disabled={!currentInfoHash() || stats()?.state !== "paused"}
               >
                 <CirclePlay class="h-4 w-4" />
-                继续
+                {i18nStore.t("common.resume")}
               </button>
               <button
                 type="button"
@@ -1686,7 +1729,7 @@ function App() {
                 disabled={!currentInfoHash()}
               >
                 <Square class="h-4 w-4 fill-current" />
-                停止
+                {i18nStore.t("common.stop")}
               </button>
             </div>
           </section>
@@ -1695,7 +1738,7 @@ function App() {
             <section class="rounded-3xl border border-white/10 bg-slate-900/80 p-4 text-xs text-slate-400">
               <div class="flex items-center gap-2 text-slate-300">
                 <Activity class="h-4 w-4 text-sky-400" />
-                当前任务
+                {i18nStore.t("common.currentTask")}
               </div>
               <p class="mt-2 break-all font-mono">{currentInfoHash()}</p>
             </section>
