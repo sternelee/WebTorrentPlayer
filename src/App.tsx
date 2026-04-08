@@ -1122,7 +1122,7 @@ function App() {
   });
 
   return (
-    <div class="mx-auto flex min-h-screen w-full max-w-md flex-col bg-slate-950 text-white">
+    <div class="mx-auto flex min-h-screen w-full max-w-md flex-col bg-slate-950 text-white pt-safe">
       <Show when={!playerFullscreen()}>
         <header class="sticky top-0 z-20 border-b border-white/10 bg-slate-950/90 px-4 pb-4 pt-safe-top backdrop-blur">
           <div class="pt-4">

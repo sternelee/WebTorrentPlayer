@@ -1,7 +1,7 @@
 use std::{collections::HashSet, path::PathBuf, str::FromStr, sync::Arc};
 
 use anyhow::{Context, Result};
-use librqbit::{api::TorrentIdOrHash, dht::Id20, ManagedTorrent, Session};
+use librqbit::{api::TorrentIdOrHash, dht::Id20, ManagedTorrent, Session, SessionOptions};
 use parking_lot::RwLock;
 use serde::Serialize;
 
@@ -40,7 +40,15 @@ pub struct TorrentMetadataPayload {
 
 impl AppState {
     pub async fn new(cache_dir: PathBuf) -> Result<Self> {
-        let session = Session::new(cache_dir.clone()).await?;
+        #[allow(unused_mut)]
+        let mut session_options = SessionOptions::default();
+
+        #[cfg(any(target_os = "android", target_os = "ios"))]
+        {
+            session_options.disable_dht_persistence = true;
+        }
+
+        let session = Session::new_with_opts(cache_dir.clone(), session_options).await?;
         Ok(Self {
             session,
             server_port: RwLock::new(0),
