@@ -36,6 +36,40 @@ pnpm build
 pnpm tauri build --debug --no-bundle
 ```
 
+### iOS Build & Install
+
+**Prerequisites:**
+- Xcode installed
+- Apple Developer account with signing certificate
+- iOS device connected via USB (or simulator)
+
+**Configure signing:**
+Update `src-tauri/tauri.conf.json` with your development team ID:
+```json
+"bundle": {
+  "iOS": {
+    "developmentTeam": "YOUR_TEAM_ID"
+  }
+}
+```
+
+**Build for iOS device:**
+```bash
+pnpm tauri ios build --export-method debugging
+```
+
+This generates an `.xcarchive` in `src-tauri/gen/apple/build/`.
+
+**Install to connected device:**
+```bash
+# Using ios-deploy (install via: brew install ios-deploy)
+ios-deploy --bundle "src-tauri/gen/apple/build/webtorrent-player_iOS.xcarchive/Products/Applications/Webtorrent Player.app" --justlaunch
+```
+
+Or open `src-tauri/gen/apple/webtorrent-player.xcodeproj` in Xcode and run from there.
+
+**First launch:** Trust the developer certificate in Settings → General → VPN & Device Management.
+
 ## IPC payloads
 
 ```ts
