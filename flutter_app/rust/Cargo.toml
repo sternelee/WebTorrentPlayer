@@ -1,0 +1,33 @@
+[package]
+name = "rust_lib_flutter_app"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+flutter_rust_bridge = "=2.12.0"
+
+# P2P Engine
+librqbit = { version = "8.1", default-features = false, features = ["rust-tls"] }
+
+# Async & Network
+tokio = { version = "1", features = ["full"] }
+axum = "0.8"
+tower-http = { version = "0.6", features = ["cors"] }
+tokio-util = { version = "0.7", features = ["io"] }
+futures = "0.3"
+
+# Utilities
+anyhow = "1"
+parking_lot = "0.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+hex = "0.4"
+mime_guess = "2"
+chrono = "0.4"
+tracing = "0.1"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
