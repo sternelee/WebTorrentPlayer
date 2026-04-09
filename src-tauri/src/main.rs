@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    webtorrent_player_lib::run()
+    torplay_lib::run()
 }

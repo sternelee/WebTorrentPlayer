@@ -1,12 +1,12 @@
 [package]
-name = "webtorrent-player"
+name = "torplay"
 version = "0.1.0"
-description = "Mobile-first P2P Streaming Player"
+description = "P2P Streaming Player"
 authors = ["Architect"]
 edition = "2021"
 
 [lib]
-name = "webtorrent_player_lib"
+name = "torplay_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]

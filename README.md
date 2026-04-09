@@ -1,4 +1,4 @@
-# WebTorrentPlayer
+# TorPlay
 
 Mobile-first P2P streaming player built with **Tauri 2.0**, **SolidJS**, **Vidstack**, **Rust**, **axum**, and **librqbit**.
 
@@ -63,10 +63,10 @@ This generates an `.xcarchive` in `src-tauri/gen/apple/build/`.
 **Install to connected device:**
 ```bash
 # Using ios-deploy (install via: brew install ios-deploy)
-ios-deploy --bundle "src-tauri/gen/apple/build/webtorrent-player_iOS.xcarchive/Products/Applications/Webtorrent Player.app" --justlaunch
+ios-deploy --bundle "src-tauri/gen/apple/build/torplay_iOS.xcarchive/Products/Applications/TorPlay.app" --justlaunch
 ```
 
-Or open `src-tauri/gen/apple/webtorrent-player.xcodeproj` in Xcode and run from there.
+Or open `src-tauri/gen/apple/torplay.xcodeproj` in Xcode and run from there.
 
 **First launch:** Trust the developer certificate in Settings → General → VPN & Device Management.
 

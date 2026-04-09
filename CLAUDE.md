@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-WebTorrentPlayer is a mobile-first P2P streaming video player built with **Tauri 2.0**, **SolidJS**, **Vidstack**, **Rust**, **axum**, and **librqbit**. It supports torrent streaming via magnet links or .torrent files, with video playback through a local HTTP proxy that handles Range requests for seeking.
+TorPlay is a mobile-first P2P streaming video player built with **Tauri 2.0**, **SolidJS**, **Vidstack**, **Rust**, **axum**, and **librqbit**. It supports torrent streaming via magnet links or .torrent files, with video playback through a local HTTP proxy that handles Range requests for seeking.
 
 ## Build Commands
 
@@ -30,7 +30,7 @@ pnpm tauri build            # Build release version
 pnpm tauri ios build --export-method debugging
 
 # Install to connected device (requires ios-deploy: brew install ios-deploy)
-ios-deploy --bundle "src-tauri/gen/apple/build/webtorrent-player_iOS.xcarchive/Products/Applications/Webtorrent Player.app" --justlaunch
+ios-deploy --bundle "src-tauri/gen/apple/build/torplay_iOS.xcarchive/Products/Applications/TorPlay.app" --justlaunch
 ```
 
 ### Android

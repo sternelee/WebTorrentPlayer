@@ -30,7 +30,7 @@ declare global {
   }
 }
 
-const NETWORK_EVENT_NAME = "webtorrentplayer:android-network-change";
+const NETWORK_EVENT_NAME = "torplay:android-network-change";
 
 function bridge() {
   return typeof window === "undefined" ? undefined : window.WebTorrentPlayerAndroid;

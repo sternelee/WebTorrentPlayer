@@ -190,7 +190,7 @@ class PlaybackForegroundService : Service() {
   }
 
   companion object {
-    private const val CHANNEL_ID = "webtorrentplayer-playback"
+    private const val CHANNEL_ID = "torplay-playback"
     private const val NOTIFICATION_ID = 1001
     private const val ACTION_UPSERT = "com.sternelee.webtorrentplayer.action.UPSERT_FOREGROUND"
     private const val EXTRA_PAYLOAD = "payload"

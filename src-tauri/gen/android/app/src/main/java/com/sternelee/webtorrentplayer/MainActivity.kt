@@ -115,7 +115,7 @@ class MainActivity : TauriActivity() {
 
   private fun emitCurrentNetworkStatus() {
     emitToFrontend(
-      "webtorrentplayer:android-network-change",
+      "torplay:android-network-change",
       currentNetworkStatusJson().toString(),
     )
   }

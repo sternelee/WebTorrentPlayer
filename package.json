@@ -1,5 +1,5 @@
 {
-  "name": "webtorrentplayer",
+  "name": "torplay",
   "version": "0.1.0",
   "description": "P2P Streaming Player using Tauri 2.0 and SolidJS",
   "type": "module",

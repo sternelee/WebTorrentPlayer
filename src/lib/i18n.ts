@@ -3,7 +3,7 @@ import { flatten, resolveTemplate, translator } from "@solid-primitives/i18n";
 
 export type Locale = "en" | "zh-CN";
 
-const LOCALE_STORAGE_KEY = "webtorrentplayer.locale";
+const LOCALE_STORAGE_KEY = "torplay.locale";
 
 const dictionaries = {
   en: flatten({
