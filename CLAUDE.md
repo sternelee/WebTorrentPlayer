@@ -54,6 +54,7 @@ Key commands:
 - `select_torrent_file(info_hash, file_index)` - Select video file to play
 - `pause_torrent/resume_torrent/stop_torrent(info_hash)` - Torrent lifecycle
 - `get_stream_url(info_hash, file_index)` - Get HTTP stream URL
+- `open_with_system_player(stream_url)` - Open stream in system player (desktop)
 
 Key events:
 - `torrent-metadata-ready` - Emitted when torrent metadata is parsed, contains file list
@@ -98,6 +99,16 @@ When selecting a video file (`select_torrent_file`), the backend:
 
 Translation files are in `src/lib/i18n.ts`. Supported locales: `en`, `zh-CN`. Uses `@solid-primitives/i18n` with dictionary keys like `t('torrent.pasteMagnetHint')`.
 
+### External Player Support
+
+When user selects an unsupported format (MKV, HEVC, etc.), the app offers:
+- **Open with system player** - Opens in browser (Chrome handles MKV/HEVC) or native player
+- **Copy stream URL** - For manual copy to external players like VLC/MX Player
+
+The frontend detects unsupported formats in `src/lib/video.ts`. The native player bridge (`src/lib/native-player.ts`) handles:
+- Android: Uses `window.WebTorrentPlayerAndroid.openVideoPlayer()`
+- Desktop: Uses `open_with_system_player` Tauri command
+
 ## Key Files
 
 | File | Purpose |
@@ -105,6 +116,10 @@ Translation files are in `src/lib/i18n.ts`. Supported locales: `en`, `zh-CN`. Us
 | `src/App.tsx` | Main UI component with torrent input, file list, and Vidstack player |
 | `src/lib/android.ts` | Android bridge for native features (notifications, orientation, network) |
 | `src/lib/i18n.ts` | Translation dictionaries |
+| `src/lib/video.ts` | Video format detection (MKV, HEVC, etc.) |
+| `src/lib/native-player.ts` | External player integration (VLC, MX Player, etc.) |
+| `src/lib/search.ts` | Search state management with localStorage persistence |
+| `src/lib/SearchPopup.tsx` | Search UI popup component |
 | `src-tauri/src/lib.rs` | Tauri commands, torrent lifecycle, event emission |
 | `src-tauri/src/state.rs` | AppState, payload structs |
 | `src-tauri/src/server.rs` | axum HTTP proxy with Range request handling |

@@ -22,6 +22,7 @@ import {
   Pause,
   Play,
   RefreshCcw,
+  Search,
   Square,
   Video,
   Volume2,
@@ -43,6 +44,8 @@ import {
 } from "./lib/android";
 import { i18nStore } from "./lib/i18n";
 import { requiresExternalPlayer } from "./lib/video";
+import { SearchPopup } from "./lib/SearchPopup";
+import { searchStore, type SearchResult } from "./lib/search";
 import {
   openWithNativePlayer,
   copyStreamUrl,
@@ -380,6 +383,7 @@ function App() {
   const [showPlayerChrome, setShowPlayerChrome] = createSignal(true);
   const [pendingAutoPlaySource, setPendingAutoPlaySource] = createSignal("");
   const [lastAudibleVolume, setLastAudibleVolume] = createSignal(1);
+  const [isSearchPopupOpen, setIsSearchPopupOpen] = createSignal(false);
   let player: TorrentPlayerElement | undefined;
   let playerSurface: HTMLDivElement | undefined;
   let torrentFileInput: HTMLInputElement | undefined;
@@ -515,6 +519,23 @@ function App() {
 
     await launchTorrent(async () =>
       invoke<string>("start_torrent", { magnetUri: rawInput }),
+    );
+  }
+
+  async function handleSearchResultSelect(result: SearchResult) {
+    // Set the magnet URL from the search result
+    const url = result.url || result.hash ? `magnet:?xt=urn:btih:${result.hash}` : "";
+    if (!url) {
+      setError(i18nStore.t("torrent.invalidInput"));
+      return;
+    }
+
+    // Set the magnet input field
+    setMagnet(url);
+
+    // Start the torrent
+    await launchTorrent(async () =>
+      invoke<string>("start_torrent", { magnetUri: url }),
     );
   }
 
@@ -1224,17 +1245,27 @@ function App() {
             <p class="text-xs uppercase tracking-[0.28em] text-sky-400">
               WebTorrentPlayer
             </p>
-            <button
-              type="button"
-              class="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-300 transition hover:bg-white/10"
-              onClick={() =>
-                i18nStore.setLocale(
-                  i18nStore.locale() === "en" ? "zh-CN" : "en",
-                )
-              }
-            >
-              {i18nStore.locale() === "en" ? "中文" : "EN"}
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-white/10"
+                onClick={() => setIsSearchPopupOpen(true)}
+                aria-label="Search torrents"
+              >
+                <Search class="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                class="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+                onClick={() =>
+                  i18nStore.setLocale(
+                    i18nStore.locale() === "en" ? "zh-CN" : "en",
+                  )
+                }
+              >
+                {i18nStore.locale() === "en" ? "中文" : "EN"}
+              </button>
+            </div>
           </div>
 
           <div
@@ -1903,6 +1934,12 @@ function App() {
           </Show>
         </Show>
       </main>
+
+      <SearchPopup
+        isOpen={isSearchPopupOpen()}
+        onClose={() => setIsSearchPopupOpen(false)}
+        onSelectResult={handleSearchResultSelect}
+      />
     </div>
   );
 }
