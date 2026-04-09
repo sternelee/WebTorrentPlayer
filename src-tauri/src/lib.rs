@@ -305,6 +305,59 @@ fn get_stream_url(info_hash: String, file_index: usize, state: State<'_, Arc<App
     format!("http://127.0.0.1:{port}/stream/{info_hash}/{file_index}")
 }
 
+#[tauri::command]
+async fn open_with_system_player(
+    stream_url: String,
+    state: State<'_, Arc<AppState>>,
+) -> Result<(), String> {
+    // Validate the URL is from our local server
+    let port = *state.server_port.read();
+    let expected_prefix = format!("http://127.0.0.1:{port}/stream/");
+
+    if !stream_url.starts_with(&expected_prefix) {
+        return Err("Invalid stream URL".to_string());
+    }
+
+    // Use platform-specific commands to open the URL
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&stream_url)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .args(["/C", "start", "", &stream_url])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // Try xdg-open first
+        let result = std::process::Command::new("xdg-open")
+            .arg(&stream_url)
+            .spawn();
+        if result.is_err() {
+            std::process::Command::new("gnome-open")
+                .arg(&stream_url)
+                .spawn()
+                .map_err(|e| e.to_string())?;
+        }
+    }
+
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    {
+        // On mobile, we rely on the JS bridge or native plugin
+        return Err("Use native bridge instead".to_string());
+    }
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -329,7 +382,8 @@ pub fn run() {
             pause_torrent,
             resume_torrent,
             stop_torrent,
-            get_stream_url
+            get_stream_url,
+            open_with_system_player
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -2,14 +2,19 @@ package com.sternelee.torplay
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.Uri
 import android.os.Bundle
 import android.os.Build
+import android.os.Looper
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicReference
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
@@ -173,6 +178,40 @@ class MainActivity : TauriActivity() {
       runOnUiThread {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
       }
+    }
+
+    @JavascriptInterface
+    fun openVideoPlayer(url: String, title: String): String {
+      val resultRef = AtomicReference<String>("unknown")
+      val latch = CountDownLatch(1)
+
+      runOnUiThread {
+        try {
+          // Simply open with the system's default handler
+          // This will typically open the browser (Chrome), which can play MKV/HEVC
+          val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse(url), "video/*")
+            putExtra(Intent.EXTRA_TITLE, title)
+          }
+
+          startActivity(intent)
+          resultRef.set("started:default")
+        } catch (e: Exception) {
+          resultRef.set("error:${e.message}")
+        } finally {
+          latch.countDown()
+        }
+      }
+
+      // Wait for UI thread to complete (timeout after 5 seconds)
+      try {
+        latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
+      } catch (e: InterruptedException) {
+        Thread.currentThread().interrupt()
+        return "error:interrupted"
+      }
+
+      return resultRef.get()
     }
   }
 }

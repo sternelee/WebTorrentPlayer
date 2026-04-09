@@ -42,6 +42,12 @@ import {
   type AndroidNetworkStatus,
 } from "./lib/android";
 import { i18nStore } from "./lib/i18n";
+import { requiresExternalPlayer } from "./lib/video";
+import {
+  openWithNativePlayer,
+  copyStreamUrl,
+  getRecommendedPlayers,
+} from "./lib/native-player";
 
 type TorrentPlaybackState = "parsing" | "downloading" | "seeding" | "paused";
 
@@ -348,6 +354,10 @@ function App() {
   const [selectedSubtitleIndex, setSelectedSubtitleIndex] = createSignal<
     number | null
   >(null);
+  const [needsExternalPlayer, setNeedsExternalPlayer] = createSignal(false);
+  const [externalPlayerError, setExternalPlayerError] = createSignal<
+    string | null
+  >(null);
   const [error, setError] = createSignal<string | null>(null);
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [isSelecting, setIsSelecting] = createSignal(false);
@@ -582,6 +592,7 @@ function App() {
   async function handleSelectFile(infoHash: string, fileIndex: number) {
     setIsSelecting(true);
     setError(null);
+    setExternalPlayerError(null);
 
     try {
       const url = await invoke<string>("select_torrent_file", {
@@ -591,8 +602,21 @@ function App() {
 
       setSelectedFileIndex(fileIndex);
       setVideoSrc(url);
+
+      // Detect if this file needs external player
+      const file = metadata()?.files.find((f) => f.index === fileIndex);
+      if (file) {
+        const needsExternal = requiresExternalPlayer(file.name);
+        setNeedsExternalPlayer(needsExternal);
+        if (needsExternal) {
+          console.log(`[Video] ${file.name} requires external player`);
+        }
+      } else {
+        setNeedsExternalPlayer(false);
+      }
     } catch (invokeError) {
       setError(String(invokeError));
+      setNeedsExternalPlayer(false);
     } finally {
       setIsSelecting(false);
     }
@@ -632,6 +656,8 @@ function App() {
       setVideoSrc("");
       setSelectedFileIndex(null);
       setSelectedSubtitleIndex(null);
+      setNeedsExternalPlayer(false);
+      setExternalPlayerError(null);
     } catch (invokeError) {
       setError(String(invokeError));
     }
@@ -643,6 +669,36 @@ function App() {
 
     setVideoSrc("");
     window.setTimeout(() => setVideoSrc(source), 100);
+  }
+
+  async function handleOpenExternalPlayer() {
+    const source = videoSrc();
+    const file = selectedFile();
+    if (!source || !file) {
+      setExternalPlayerError(i18nStore.t("player.noStreamAvailable"));
+      return;
+    }
+
+    const result = await openWithNativePlayer(source, file.name);
+    if (!result.success) {
+      setExternalPlayerError(result.error || i18nStore.t("player.noPlayerFound"));
+    } else {
+      // Clear any previous error
+      setExternalPlayerError(null);
+    }
+  }
+
+  async function handleCopyStreamUrl() {
+    const source = videoSrc();
+    if (!source) {
+      setExternalPlayerError(i18nStore.t("player.noStreamAvailable"));
+      return;
+    }
+
+    const success = await copyStreamUrl(source);
+    if (!success) {
+      setExternalPlayerError(i18nStore.t("player.copyFailed"));
+    }
   }
 
   function syncPlayerState(playerElement: TorrentPlayerElement) {
@@ -1309,6 +1365,98 @@ function App() {
             >
               <media-provider />
             </media-player>
+
+            {/* External Player Overlay */}
+            <Show when={needsExternalPlayer() && videoSrc()}>
+              <div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-sm">
+                <div class="flex max-w-md flex-col items-center gap-5 p-6 text-center">
+                  <div class="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
+                      <circle cx="17" cy="7" r="5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-semibold text-white">
+                      {i18nStore.t("player.externalPlayerTitle")}
+                    </h3>
+                    <p class="mt-2 text-sm text-slate-400">
+                      {i18nStore.t("player.externalPlayerDesc")}
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                      {i18nStore.t("player.recommendedPlayers")}:{" "}
+                      {getRecommendedPlayers().join(", ")}
+                    </p>
+                  </div>
+                  <Show when={externalPlayerError()}>
+                    <div class="w-full rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                      {externalPlayerError()}
+                    </div>
+                  </Show>
+                  <div class="flex w-full flex-col gap-2">
+                    <button
+                      type="button"
+                      class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-sky-600"
+                      onClick={() => void handleOpenExternalPlayer()}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                      {i18nStore.t("player.openWithSystemPlayer")}
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10"
+                      onClick={() => void handleCopyStreamUrl()}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <rect
+                          width="14"
+                          height="14"
+                          x="8"
+                          y="8"
+                          rx="2"
+                          ry="2"
+                        />
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                      </svg>
+                      {i18nStore.t("player.copyStreamUrl")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Show>
+
             <Show when={!videoSrc()}>
               <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-black text-slate-500">
                 <div class="flex flex-col items-center justify-center gap-3">
@@ -1650,6 +1798,16 @@ function App() {
                                 ? i18nStore.t("player.video")
                                 : i18nStore.t("player.nonVideo")}
                             </span>
+                            <Show
+                              when={
+                                file.isVideo &&
+                                requiresExternalPlayer(file.name)
+                              }
+                            >
+                              <span class="shrink-0 rounded-full bg-amber-500/15 px-2 py-1 text-[11px] text-amber-300">
+                                {i18nStore.t("player.requiresExternalPlayer")}
+                              </span>
+                            </Show>
                           </div>
                         </div>
                       </button>
@@ -1706,7 +1864,7 @@ function App() {
             <div class="mt-4 flex gap-2">
               <button
                 type="button"
-                class="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm transition hover:bg-white/10 disabled:opacity-60"
+                class="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-2 py-2 text-sm transition hover:bg-white/10 disabled:opacity-60"
                 onClick={() => void handlePause()}
                 disabled={!currentInfoHash() || stats()?.state === "paused"}
               >
@@ -1715,7 +1873,7 @@ function App() {
               </button>
               <button
                 type="button"
-                class="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm transition hover:bg-white/10 disabled:opacity-60"
+                class="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-2 py-2 text-sm transition hover:bg-white/10 disabled:opacity-60"
                 onClick={() => void handleResume()}
                 disabled={!currentInfoHash() || stats()?.state !== "paused"}
               >
@@ -1724,7 +1882,7 @@ function App() {
               </button>
               <button
                 type="button"
-                class="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200 transition hover:bg-red-500/20 disabled:opacity-60"
+                class="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-2 py-2 text-sm text-red-200 transition hover:bg-red-500/20 disabled:opacity-60"
                 onClick={() => void handleStop()}
                 disabled={!currentInfoHash()}
               >

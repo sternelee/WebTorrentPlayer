@@ -22,6 +22,7 @@ interface AndroidBridge {
   getNetworkStatus(): string;
   enterLandscapeFullscreen(): void;
   exitLandscapeFullscreen(): void;
+  openVideoPlayer?(url: string, title: string): string;
 }
 
 declare global {
