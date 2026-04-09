@@ -4977,6 +4977,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
 
 [[package]]
+name = "torplay"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "chrono",
+ "futures",
+ "hex",
+ "librqbit",
+ "mime_guess",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-shell",
+ "tokio",
+ "tokio-util",
+ "tower-http",
+ "tracing",
+]
+
+[[package]]
 name = "tower"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5523,29 +5546,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22cfaf3c063993ff62e73cb4311efde4db1efb31ab78a3e5c457939ad5cc0bed"
 dependencies = [
  "rustls-pki-types",
-]
-
-[[package]]
-name = "webtorrent-player"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "chrono",
- "futures",
- "hex",
- "librqbit",
- "mime_guess",
- "parking_lot",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-shell",
- "tokio",
- "tokio-util",
- "tower-http",
- "tracing",
 ]
 
 [[package]]

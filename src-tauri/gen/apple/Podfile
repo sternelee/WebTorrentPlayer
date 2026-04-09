@@ -1,13 +1,13 @@
 # Uncomment the next line to define a global platform for your project
 
-target 'webtorrent-player_iOS' do
+target 'torplay_iOS' do
 platform :ios, '14.0'
-  # Pods for webtorrent-player_iOS
+  # Pods for torplay_iOS
 end
 
-target 'webtorrent-player_macOS' do
+target 'torplay_macOS' do
 platform :osx, '11.0'
-  # Pods for webtorrent-player_macOS
+  # Pods for torplay_macOS
 end
 
 # Delete the deployment target for iOS and macOS, causing it to be inherited from the Podfile
