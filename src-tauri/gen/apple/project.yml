@@ -1,6 +1,6 @@
 name: webtorrent-player
 options:
-  bundleIdPrefix: com.sternelee.webtorrentplayer
+  bundleIdPrefix: com.sternelee.torplay
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -10,8 +10,8 @@ configs:
 settingGroups:
   app:
     base:
-      PRODUCT_NAME: webtorrentplayer
-      PRODUCT_BUNDLE_IDENTIFIER: com.sternelee.webtorrentplayer
+      PRODUCT_NAME: torplay
+      PRODUCT_BUNDLE_IDENTIFIER: com.sternelee.torplay
       DEVELOPMENT_TEAM: HUJ467VC3N
 targetTemplates:
   app:

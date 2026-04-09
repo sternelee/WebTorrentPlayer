@@ -1,4 +1,4 @@
-package com.sternelee.webtorrentplayer
+package com.sternelee.torplay
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -192,7 +192,7 @@ class PlaybackForegroundService : Service() {
   companion object {
     private const val CHANNEL_ID = "torplay-playback"
     private const val NOTIFICATION_ID = 1001
-    private const val ACTION_UPSERT = "com.sternelee.webtorrentplayer.action.UPSERT_FOREGROUND"
+    private const val ACTION_UPSERT = "com.sternelee.torplay.action.UPSERT_FOREGROUND"
     private const val EXTRA_PAYLOAD = "payload"
 
     fun upsert(context: Context, payloadJson: String) {

@@ -1,4 +1,4 @@
-package com.sternelee.webtorrentplayer
+package com.sternelee.torplay
 
 import android.Manifest
 import android.content.Context
