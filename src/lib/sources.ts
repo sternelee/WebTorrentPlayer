@@ -394,6 +394,203 @@ async function searchTGx(keyword: string): Promise<SearchResult[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Torrents.csv  –  https://torrents-csv.com  (self-hostable DHT search, JSON API)
+// ---------------------------------------------------------------------------
+async function searchTorrentsCSV(keyword: string): Promise<SearchResult[]> {
+  const url = `https://torrents-csv.com/service/search?q=${encodeURIComponent(keyword)}&size=100&page=1&type=torrent`;
+  const body = await httpGet(url);
+
+  const data = JSON.parse(body) as Array<{
+    name?: string;
+    infohash?: string;
+    size_bytes?: number;
+    seeders?: number;
+    leechers?: number;
+  }>;
+
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .filter((item) => item.infohash)
+    .map((item) => {
+      const hash = item.infohash!;
+      const title = item.name ?? "";
+      return {
+        title,
+        url: magnetLink(hash, title),
+        hash,
+        size: formatBytes(item.size_bytes ?? 0),
+        seeders: item.seeders ?? 0,
+        peers: item.leechers ?? 0,
+        source: "Torrents.csv",
+      };
+    });
+}
+
+// ---------------------------------------------------------------------------
+// TorrentKitty  –  https://www.torrentkitty.tv  (DHT search, HTML scraping)
+// ---------------------------------------------------------------------------
+async function searchTorrentKitty(keyword: string): Promise<SearchResult[]> {
+  const url = `https://www.torrentkitty.tv/search/${encodeURIComponent(keyword)}`;
+  const body = await httpGet(url);
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(body, "text/html");
+  const rows = Array.from(doc.querySelectorAll("table#archiveResult tr:not(:first-child)"));
+  const results: SearchResult[] = [];
+
+  for (const row of rows) {
+    const cells = row.querySelectorAll("td");
+    if (cells.length < 3) continue;
+
+    const title = cells[0]?.textContent?.trim();
+    const sizeText = cells[1]?.textContent?.trim();
+    const magnetEl = row.querySelector('a[href^="magnet:"]');
+    const magnet = magnetEl?.getAttribute("href");
+    if (!title || !magnet) continue;
+
+    const hashMatch = magnet.match(/urn:btih:([a-fA-F0-9]{40})/i);
+    const hash = hashMatch?.[1];
+
+    results.push({
+      title,
+      url: magnet,
+      hash,
+      size: sizeText ?? undefined,
+      seeders: 0,
+      peers: 0,
+      source: "TorrentKitty",
+    });
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// TorrentProject2  –  https://torrentproject2.com  (general, HTML scraping)
+// ---------------------------------------------------------------------------
+async function searchTorrentProject2(keyword: string): Promise<SearchResult[]> {
+  const url = `https://torrentproject2.com/?t=${encodeURIComponent(keyword)}`;
+  const body = await httpGet(url);
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(body, "text/html");
+  const rows = Array.from(doc.querySelectorAll("#similarfiles tr:not(:first-child)"));
+  const results: SearchResult[] = [];
+
+  for (const row of rows) {
+    const titleEl = row.querySelector("td a");
+    const cells = row.querySelectorAll("td");
+    const magnetEl = row.querySelector('a[href^="magnet:"]');
+    const magnet = magnetEl?.getAttribute("href");
+    const title = titleEl?.textContent?.trim();
+    if (!title || !magnet) continue;
+
+    const hashMatch = magnet.match(/urn:btih:([a-fA-F0-9]{40})/i);
+    const hash = hashMatch?.[1];
+
+    results.push({
+      title,
+      url: magnet,
+      hash,
+      size: cells[2]?.textContent?.trim() ?? undefined,
+      seeders: parseInt(cells[3]?.textContent?.trim() ?? "0", 10),
+      peers: parseInt(cells[4]?.textContent?.trim() ?? "0", 10),
+      source: "TorrentProject2",
+    });
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// Torrent9  –  https://torrent9.vip  (French general tracker, HTML scraping)
+//
+// Note: Torrent9 frequently changes domains. The current base URL may need
+// updating if the site moves again.
+// ---------------------------------------------------------------------------
+async function searchTorrent9(keyword: string): Promise<SearchResult[]> {
+  const url = `https://www.torrent9.vip/search_torrent/${encodeURIComponent(keyword)}.html`;
+  const body = await httpGet(url);
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(body, "text/html");
+  const rows = Array.from(doc.querySelectorAll("table.table tr:not(:first-child)"));
+  const results: SearchResult[] = [];
+
+  for (const row of rows) {
+    const titleEl = row.querySelector("td.tdTitle a");
+    const cells = row.querySelectorAll("td");
+    const title = titleEl?.textContent?.trim();
+    const href = titleEl?.getAttribute("href");
+    if (!title || !href) continue;
+
+    // Torrent9 result pages link to detail pages; extract hash from href slug
+    const slugMatch = href.match(/torrent-([a-fA-F0-9]{40})/i);
+    const hash = slugMatch?.[1];
+    if (!hash) continue;
+
+    const sizeText = cells[1]?.textContent?.trim();
+    const seeders = parseInt(cells[2]?.textContent?.trim() ?? "0", 10);
+    const leechers = parseInt(cells[3]?.textContent?.trim() ?? "0", 10);
+
+    results.push({
+      title,
+      url: magnetLink(hash, title),
+      hash,
+      size: sizeText ?? undefined,
+      seeders: isNaN(seeders) ? 0 : seeders,
+      peers: isNaN(leechers) ? 0 : leechers,
+      source: "Torrent9",
+    });
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// TorrentDownload  –  https://www.torrentdownload.info  (general, HTML scraping)
+// ---------------------------------------------------------------------------
+async function searchTorrentDownload(keyword: string): Promise<SearchResult[]> {
+  const url = `https://www.torrentdownload.info/search?q=${encodeURIComponent(keyword)}`;
+  const body = await httpGet(url);
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(body, "text/html");
+  const rows = Array.from(doc.querySelectorAll("table.table tr:not(:first-child)"));
+  const results: SearchResult[] = [];
+
+  for (const row of rows) {
+    const titleEl = row.querySelector("td a");
+    const cells = row.querySelectorAll("td");
+    const title = titleEl?.textContent?.trim();
+    const href = titleEl?.getAttribute("href");
+    if (!title || !href) continue;
+
+    // Detail page URL contains the info-hash: /torrent/{hash}/{name}
+    const hashMatch = href.match(/\/torrent\/([a-fA-F0-9]{40})\//i);
+    const hash = hashMatch?.[1];
+    if (!hash) continue;
+
+    const sizeText = cells[1]?.textContent?.trim();
+    const seeders = parseInt(cells[2]?.textContent?.trim() ?? "0", 10);
+    const leechers = parseInt(cells[3]?.textContent?.trim() ?? "0", 10);
+
+    results.push({
+      title,
+      url: magnetLink(hash, title),
+      hash,
+      size: sizeText ?? undefined,
+      seeders: isNaN(seeders) ? 0 : seeders,
+      peers: isNaN(leechers) ? 0 : leechers,
+      source: "TorrentDownload",
+    });
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
 // LimeTorrents  –  https://www.limetorrents.lol  (HTML search results page)
 // ---------------------------------------------------------------------------
 async function searchLimeTorrents(keyword: string): Promise<SearchResult[]> {
@@ -505,6 +702,36 @@ export const BUILT_IN_SOURCES: SearchSource[] = [
     name: "LimeTorrents",
     url: "https://www.limetorrents.lol",
     searchFn: searchLimeTorrents,
+  },
+  {
+    id: "torrentscsv",
+    name: "Torrents.csv",
+    url: "https://torrents-csv.com",
+    searchFn: searchTorrentsCSV,
+  },
+  {
+    id: "torrentkitty",
+    name: "TorrentKitty",
+    url: "https://www.torrentkitty.tv",
+    searchFn: searchTorrentKitty,
+  },
+  {
+    id: "torrentproject2",
+    name: "TorrentProject2",
+    url: "https://torrentproject2.com",
+    searchFn: searchTorrentProject2,
+  },
+  {
+    id: "torrent9",
+    name: "Torrent9",
+    url: "https://www.torrent9.vip",
+    searchFn: searchTorrent9,
+  },
+  {
+    id: "torrentdownload",
+    name: "TorrentDownload",
+    url: "https://www.torrentdownload.info",
+    searchFn: searchTorrentDownload,
   },
 ];
 
