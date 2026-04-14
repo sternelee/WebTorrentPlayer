@@ -24,6 +24,11 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
+/** Build a magnet link with standard announce trackers appended. */
+function magnetLink(hash: string, name: string): string {
+  return `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(name)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.tracker.cl%3A1337%2Fannounce`;
+}
+
 // ---------------------------------------------------------------------------
 // The Pirate Bay  –  https://apibay.org
 // ---------------------------------------------------------------------------
@@ -49,7 +54,7 @@ async function searchTPB(keyword: string): Promise<SearchResult[]> {
 
   return data.map((item) => ({
     title: item.name,
-    url: `magnet:?xt=urn:btih:${item.info_hash}&dn=${encodeURIComponent(item.name)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce`,
+    url: magnetLink(item.info_hash, item.name),
     hash: item.info_hash,
     size: formatBytes(parseInt(item.size, 10)),
     seeders: parseInt(item.seeders, 10),
@@ -89,7 +94,7 @@ async function searchYTS(keyword: string): Promise<SearchResult[]> {
     for (const torrent of movie.torrents ?? []) {
       results.push({
         title: `${movie.title} (${movie.year}) [${torrent.quality} ${torrent.type}]`,
-        url: `magnet:?xt=urn:btih:${torrent.hash}&dn=${encodeURIComponent(movie.title)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce`,
+        url: magnetLink(torrent.hash, movie.title),
         hash: torrent.hash,
         size: torrent.size,
         seeders: torrent.seeds,
@@ -122,9 +127,7 @@ async function searchEZTV(keyword: string): Promise<SearchResult[]> {
 
   return (data.torrents ?? []).map((item) => ({
     title: item.filename,
-    url:
-      item.magnet_url ||
-      `magnet:?xt=urn:btih:${item.hash}&dn=${encodeURIComponent(item.filename)}`,
+    url: item.magnet_url || magnetLink(item.hash, item.filename),
     hash: item.hash,
     size: formatBytes(item.size_bytes),
     seeders: item.seeds,
@@ -181,6 +184,35 @@ async function searchNyaa(keyword: string): Promise<SearchResult[]> {
 }
 
 // ---------------------------------------------------------------------------
+// AniDex  –  https://anidex.info  (anime / manga, JSON API)
+// ---------------------------------------------------------------------------
+async function searchAniDex(keyword: string): Promise<SearchResult[]> {
+  const url = `https://anidex.info/api/?q=${encodeURIComponent(keyword)}&id=0&lang_id=0`;
+  const body = await httpGet(url);
+
+  const data = JSON.parse(body) as Array<{
+    torrent_name: string;
+    info_hash: string;
+    magnet_uri: string;
+    file_size: number;
+    seeders: number;
+    leechers: number;
+  }>;
+
+  if (!Array.isArray(data)) return [];
+
+  return data.map((item) => ({
+    title: item.torrent_name,
+    url: item.magnet_uri || magnetLink(item.info_hash, item.torrent_name),
+    hash: item.info_hash,
+    size: formatBytes(item.file_size),
+    seeders: item.seeders,
+    peers: item.leechers,
+    source: "AniDex",
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // SolidTorrents  –  https://solidtorrents.to  (general, multiple categories)
 // ---------------------------------------------------------------------------
 async function searchSolidTorrents(keyword: string): Promise<SearchResult[]> {
@@ -198,7 +230,7 @@ async function searchSolidTorrents(keyword: string): Promise<SearchResult[]> {
 
   return (data.results ?? []).map((item) => ({
     title: item.title,
-    url: `magnet:?xt=urn:btih:${item.infoHash}&dn=${encodeURIComponent(item.title)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce`,
+    url: magnetLink(item.infoHash, item.title),
     hash: item.infoHash,
     size: formatBytes(item.size),
     seeders: item.swarm?.seeders ?? 0,
@@ -233,9 +265,7 @@ async function searchKnaben(keyword: string): Promise<SearchResult[]> {
       const hash = item.infoHash!;
       return {
         title,
-        url:
-          item.magnetUrl ??
-          `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(title)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce`,
+        url: item.magnetUrl ?? magnetLink(hash, title),
         hash,
         size: formatBytes(item.bytes ?? 0),
         seeders: item.seeders ?? 0,
@@ -246,79 +276,168 @@ async function searchKnaben(keyword: string): Promise<SearchResult[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Jackett  –  self-hosted indexer aggregator  (https://github.com/Jackett/Jackett)
-//
-// Users must run a local Jackett instance and provide their API key in the
-// app settings.  Jackett connects to hundreds of public and private trackers,
-// making it the most comprehensive search source when available.
+// BT4G  –  https://bt4g.org  (DHT search engine, JSON API)
 // ---------------------------------------------------------------------------
-const JACKETT_URL_KEY = "torplay.jackettUrl";
-const JACKETT_API_KEY_STORAGE_KEY = "torplay.jackettApiKey";
-
-export interface JackettConfig {
-  url: string;
-  apiKey: string;
-}
-
-export function getJackettConfig(): JackettConfig {
-  return {
-    url:
-      (typeof window !== "undefined"
-        ? localStorage.getItem(JACKETT_URL_KEY)
-        : null) ?? "http://localhost:9117",
-    apiKey:
-      (typeof window !== "undefined"
-        ? localStorage.getItem(JACKETT_API_KEY_STORAGE_KEY)
-        : null) ?? "",
-  };
-}
-
-export function saveJackettConfig(url: string, apiKey: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(JACKETT_URL_KEY, url.trim());
-  localStorage.setItem(JACKETT_API_KEY_STORAGE_KEY, apiKey.trim());
-}
-
-async function searchJackett(keyword: string): Promise<SearchResult[]> {
-  const { url, apiKey } = getJackettConfig();
-  if (!apiKey) {
-    throw new Error(
-      "Jackett API key is not configured. Please set your Jackett URL and API key.",
-    );
-  }
-
-  const searchUrl = `${url}/api/v2.0/indexers/all/results?apikey=${encodeURIComponent(apiKey)}&Query=${encodeURIComponent(keyword)}`;
-  const body = await httpGet(searchUrl);
+async function searchBT4G(keyword: string): Promise<SearchResult[]> {
+  const url = `https://bt4g.org/api/search?q=${encodeURIComponent(keyword)}&category=all&page=1&orderby=seeders`;
+  const body = await httpGet(url);
 
   const data = JSON.parse(body) as {
-    Results?: Array<{
-      Title: string;
-      InfoHash?: string;
-      MagnetUri?: string;
-      Size?: number;
-      Seeders?: number;
-      Peers?: number;
-      Tracker?: string;
+    rows?: Array<{
+      info_hash?: string;
+      name?: string;
+      size?: number;
+      seeders?: number;
+      leechers?: number;
     }>;
   };
 
-  return (data.Results ?? [])
-    .filter((r) => r.InfoHash || r.MagnetUri)
-    .map((item) => ({
-      title: item.Title,
-      url:
-        item.MagnetUri ??
-        `magnet:?xt=urn:btih:${item.InfoHash}&dn=${encodeURIComponent(item.Title)}`,
-      hash: item.InfoHash,
-      size: formatBytes(item.Size ?? 0),
-      seeders: item.Seeders ?? 0,
-      peers: item.Peers ?? 0,
-      source: `Jackett/${item.Tracker ?? "all"}`,
-    }));
+  return (data.rows ?? [])
+    .filter((item) => item.info_hash)
+    .map((item) => {
+      const hash = item.info_hash!;
+      const title = item.name ?? "";
+      return {
+        title,
+        url: magnetLink(hash, title),
+        hash,
+        size: formatBytes(item.size ?? 0),
+        seeders: item.seeders ?? 0,
+        peers: item.leechers ?? 0,
+        source: "BT4G",
+      };
+    });
 }
 
 // ---------------------------------------------------------------------------
-// Public source list
+// 1337x  –  https://1337x.to  (HTML search results page)
+// ---------------------------------------------------------------------------
+async function search1337x(keyword: string): Promise<SearchResult[]> {
+  const url = `https://1337x.to/sort-search/${encodeURIComponent(keyword)}/seeders/desc/1/`;
+  const body = await httpGet(url);
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(body, "text/html");
+  const rows = Array.from(doc.querySelectorAll("table.table-list tbody tr"));
+  const results: SearchResult[] = [];
+
+  for (const row of rows) {
+    const nameEl = row.querySelector("td.name a:nth-child(2)");
+    const seedEl = row.querySelector("td.seeds");
+    const leechEl = row.querySelector("td.leeches");
+    const sizeEl = row.querySelector("td.size");
+    const magnetEl = row.querySelector('a[href^="magnet:"]');
+
+    const title = nameEl?.textContent?.trim();
+    const magnet = magnetEl?.getAttribute("href");
+    if (!title) continue;
+
+    const hashMatch = magnet?.match(/urn:btih:([a-fA-F0-9]{40})/i);
+    const hash = hashMatch?.[1];
+
+    results.push({
+      title,
+      url: magnet ?? (hash ? magnetLink(hash, title) : ""),
+      hash,
+      size: sizeEl?.firstChild?.textContent?.trim() ?? undefined,
+      seeders: parseInt(seedEl?.textContent?.trim() ?? "0", 10),
+      peers: parseInt(leechEl?.textContent?.trim() ?? "0", 10),
+      source: "1337x",
+    });
+  }
+
+  return results.filter((r) => r.url);
+}
+
+// ---------------------------------------------------------------------------
+// Torrent Galaxy  –  https://torrentgalaxy.to  (HTML search results page)
+// ---------------------------------------------------------------------------
+async function searchTGx(keyword: string): Promise<SearchResult[]> {
+  const url = `https://torrentgalaxy.to/torrents.php?search=${encodeURIComponent(keyword)}&sort=seeders&order=desc`;
+  const body = await httpGet(url);
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(body, "text/html");
+  const rows = Array.from(doc.querySelectorAll("div.tgxtablerow"));
+  const results: SearchResult[] = [];
+
+  for (const row of rows) {
+    const titleEl = row.querySelector("a.txlight");
+    const magnetEl = row.querySelector('a[href^="magnet:"]');
+    const sizeEl = row.querySelector("span.badge-secondary");
+    const badges = Array.from(row.querySelectorAll("span.badge"));
+
+    const title = titleEl?.textContent?.trim();
+    const magnet = magnetEl?.getAttribute("href");
+    if (!title || !magnet) continue;
+
+    const hashMatch = magnet.match(/urn:btih:([a-fA-F0-9]{40})/i);
+    const hash = hashMatch?.[1];
+
+    // Seed/leech badges are the last two numeric badge elements
+    const numericBadges = badges.filter((b) => /^\d+$/.test(b.textContent?.trim() ?? ""));
+    const seeders = numericBadges.length >= 2 ? parseInt(numericBadges[numericBadges.length - 2].textContent ?? "0", 10) : 0;
+    const leechers = numericBadges.length >= 1 ? parseInt(numericBadges[numericBadges.length - 1].textContent ?? "0", 10) : 0;
+
+    results.push({
+      title,
+      url: magnet,
+      hash,
+      size: sizeEl?.textContent?.trim() ?? undefined,
+      seeders: isNaN(seeders) ? 0 : seeders,
+      peers: isNaN(leechers) ? 0 : leechers,
+      source: "Torrent Galaxy",
+    });
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// LimeTorrents  –  https://www.limetorrents.lol  (HTML search results page)
+// ---------------------------------------------------------------------------
+async function searchLimeTorrents(keyword: string): Promise<SearchResult[]> {
+  const url = `https://www.limetorrents.lol/search/all/${encodeURIComponent(keyword)}/seeds/1/`;
+  const body = await httpGet(url);
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(body, "text/html");
+  const rows = Array.from(
+    doc.querySelectorAll("table.table2 tr:not(:first-child)"),
+  );
+  const results: SearchResult[] = [];
+
+  for (const row of rows) {
+    const titleEl = row.querySelector("td:first-child a:last-child");
+    const cells = row.querySelectorAll("td");
+    const sizeCell = cells[2];
+    const seedCell = cells[3];
+    const leechCell = cells[4];
+    const magnetEl = row.querySelector('a[href^="magnet:"]');
+
+    const title = titleEl?.textContent?.trim();
+    const magnet = magnetEl?.getAttribute("href");
+    if (!title || !magnet) continue;
+
+    const hashMatch = magnet.match(/urn:btih:([a-fA-F0-9]{40})/i);
+    const hash = hashMatch?.[1];
+
+    results.push({
+      title,
+      url: magnet,
+      hash,
+      size: sizeCell?.textContent?.trim() ?? undefined,
+      seeders: parseInt(seedCell?.textContent?.trim() ?? "0", 10),
+      peers: parseInt(leechCell?.textContent?.trim() ?? "0", 10),
+      source: "LimeTorrents",
+    });
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// Public source list  (all directly integrated – no intermediary server)
 // ---------------------------------------------------------------------------
 export const BUILT_IN_SOURCES: SearchSource[] = [
   {
@@ -352,16 +471,40 @@ export const BUILT_IN_SOURCES: SearchSource[] = [
     searchFn: searchNyaa,
   },
   {
+    id: "anidex",
+    name: "AniDex",
+    url: "https://anidex.info",
+    searchFn: searchAniDex,
+  },
+  {
     id: "solidtorrents",
     name: "SolidTorrents",
     url: "https://solidtorrents.to",
     searchFn: searchSolidTorrents,
   },
   {
-    id: "jackett",
-    name: "Jackett",
-    url: "http://localhost:9117",
-    searchFn: searchJackett,
+    id: "bt4g",
+    name: "BT4G",
+    url: "https://bt4g.org",
+    searchFn: searchBT4G,
+  },
+  {
+    id: "1337x",
+    name: "1337x",
+    url: "https://1337x.to",
+    searchFn: search1337x,
+  },
+  {
+    id: "tgx",
+    name: "Torrent Galaxy",
+    url: "https://torrentgalaxy.to",
+    searchFn: searchTGx,
+  },
+  {
+    id: "limetorrents",
+    name: "LimeTorrents",
+    url: "https://www.limetorrents.lol",
+    searchFn: searchLimeTorrents,
   },
 ];
 
