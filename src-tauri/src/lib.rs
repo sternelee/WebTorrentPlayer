@@ -202,13 +202,19 @@ fn greet(name: &str) -> String {
 /// Only http and https schemes are permitted.
 #[tauri::command]
 async fn http_get(url: String) -> Result<String, String> {
+    const HTTP_REQUEST_TIMEOUT_SECS: u64 = 15;
+
     if !url.starts_with("http://") && !url.starts_with("https://") {
         return Err("Only http and https URLs are supported".to_string());
     }
 
     let client = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (compatible; TorPlay/1.0)")
-        .timeout(std::time::Duration::from_secs(15))
+        .user_agent(concat!(
+            "Mozilla/5.0 (compatible; TorPlay/",
+            env!("CARGO_PKG_VERSION"),
+            ")"
+        ))
+        .timeout(std::time::Duration::from_secs(HTTP_REQUEST_TIMEOUT_SECS))
         .build()
         .map_err(|e| e.to_string())?;
 

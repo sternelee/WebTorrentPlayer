@@ -168,7 +168,7 @@ async function searchNyaa(keyword: string): Promise<SearchResult[]> {
     results.push({
       title,
       url: infoHash
-        ? `magnet:?xt=urn:btih:${infoHash}&dn=${encodeURIComponent(title)}&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce`
+        ? `magnet:?xt=urn:btih:${infoHash}&dn=${encodeURIComponent(title)}&tr=https%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce`
         : link,
       hash: infoHash || undefined,
       size: size || undefined,
@@ -253,7 +253,7 @@ async function searchKnaben(keyword: string): Promise<SearchResult[]> {
 // making it the most comprehensive search source when available.
 // ---------------------------------------------------------------------------
 const JACKETT_URL_KEY = "torplay.jackettUrl";
-const JACKETT_API_KEY_KEY = "torplay.jackettApiKey";
+const JACKETT_API_KEY_STORAGE_KEY = "torplay.jackettApiKey";
 
 export interface JackettConfig {
   url: string;
@@ -268,7 +268,7 @@ export function getJackettConfig(): JackettConfig {
         : null) ?? "http://localhost:9117",
     apiKey:
       (typeof window !== "undefined"
-        ? localStorage.getItem(JACKETT_API_KEY_KEY)
+        ? localStorage.getItem(JACKETT_API_KEY_STORAGE_KEY)
         : null) ?? "",
   };
 }
@@ -276,13 +276,15 @@ export function getJackettConfig(): JackettConfig {
 export function saveJackettConfig(url: string, apiKey: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(JACKETT_URL_KEY, url.trim());
-  localStorage.setItem(JACKETT_API_KEY_KEY, apiKey.trim());
+  localStorage.setItem(JACKETT_API_KEY_STORAGE_KEY, apiKey.trim());
 }
 
 async function searchJackett(keyword: string): Promise<SearchResult[]> {
   const { url, apiKey } = getJackettConfig();
   if (!apiKey) {
-    throw new Error("Jackett API key is not configured");
+    throw new Error(
+      "Jackett API key is not configured. Please set your Jackett URL and API key.",
+    );
   }
 
   const searchUrl = `${url}/api/v2.0/indexers/all/results?apikey=${encodeURIComponent(apiKey)}&Query=${encodeURIComponent(keyword)}`;
