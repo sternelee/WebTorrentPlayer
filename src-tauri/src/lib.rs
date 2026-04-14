@@ -198,6 +198,29 @@ fn greet(name: &str) -> String {
     format!("Hello, {name}! WebTorrentPlayer backend is ready.")
 }
 
+/// Proxy HTTP GET requests from the frontend, bypassing browser CORS restrictions.
+/// Only http and https schemes are permitted.
+#[tauri::command]
+async fn http_get(url: String) -> Result<String, String> {
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        return Err("Only http and https URLs are supported".to_string());
+    }
+
+    let client = reqwest::Client::builder()
+        .user_agent("Mozilla/5.0 (compatible; TorPlay/1.0)")
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    response.text().await.map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 async fn start_torrent(
     magnet_uri: String,
@@ -376,6 +399,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             greet,
+            http_get,
             start_torrent,
             start_torrent_file,
             select_torrent_file,

@@ -28,6 +28,9 @@ futures = "0.3"
 # P2P Engine
 librqbit = { version = "8.1", default-features = false, features = ["rust-tls"] }
 
+# HTTP client (for search proxy command)
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+
 # Utilities
 anyhow = "1"
 parking_lot = "0.12"

@@ -175,6 +175,10 @@ export function SearchPopup(props: SearchPopupProps) {
                               <span>•</span>
                               <span>{result.size}</span>
                             </Show>
+                            <Show when={(result.seeders ?? 0) > 0}>
+                              <span>•</span>
+                              <span class="text-emerald-400">↑{result.seeders}</span>
+                            </Show>
                           </div>
                         </div>
                         <ExternalLink class="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-sky-400" />

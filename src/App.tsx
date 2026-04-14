@@ -46,6 +46,7 @@ import { i18nStore } from "./lib/i18n";
 import { requiresExternalPlayer } from "./lib/video";
 import { SearchPopup } from "./lib/SearchPopup";
 import { searchStore, type SearchResult } from "./lib/search";
+import { initializeSources } from "./lib/sources";
 import {
   openWithNativePlayer,
   copyStreamUrl,
@@ -1178,6 +1179,9 @@ function App() {
   });
 
   onMount(async () => {
+    // Register built-in public torrent search sources (TPB, Knaben, YTS, EZTV, Nyaa, etc.)
+    initializeSources();
+
     const stopTick = await listen<TorrentTickPayload>(
       "torrent-tick",
       (event) => {

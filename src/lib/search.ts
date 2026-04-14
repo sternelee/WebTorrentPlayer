@@ -11,6 +11,7 @@ export interface SearchResult {
   title: string;
   url: string;
   size?: string;
+  seeders?: number;
   peers?: number;
   source: string;
   hash?: string;
