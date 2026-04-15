@@ -525,7 +525,7 @@ function App() {
 
   async function handleSearchResultSelect(result: SearchResult) {
     // Set the magnet URL from the search result
-    const url = result.url || result.hash ? `magnet:?xt=urn:btih:${result.hash}` : "";
+    const url = result.url || (result.hash ? `magnet:?xt=urn:btih:${result.hash}` : "");
     if (!url) {
       setError(i18nStore.t("torrent.invalidInput"));
       return;

@@ -48,6 +48,8 @@ export function SearchPopup(props: SearchPopupProps) {
   };
 
   const handleSelectResult = (result: SearchResult) => {
+    console.log("[SearchPopup] Selected result URL:", result.url);
+    console.log("[SearchPopup] Result:", result);
     props.onSelectResult(result);
     props.onClose();
   };
