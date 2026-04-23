@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TorPlay is a mobile-first P2P streaming video player built with **Tauri 2.0**, **SolidJS**, **Vidstack**, **Rust**, **axum**, and **librqbit**. It supports torrent streaming via magnet links or .torrent files, with video playback through a local HTTP proxy that handles Range requests for seeking.
+TorPlay is a mobile-first P2P streaming video player built with **Tauri 2.0**, **SolidJS**, **Vidstack**, **Rust**, **axum**, and **librqbit**. It supports torrent streaming via magnet links or .torrent files, with video playback through a local HTTP proxy that handles Range requests for seeking. It also includes built-in torrent search across multiple public trackers.
 
 ## Build Commands
 
@@ -24,9 +24,7 @@ pnpm tauri build            # Build release version
 
 ### iOS
 ```bash
-# Configure signing in src-tauri/tauri.conf.json first:
-# "bundle": { "iOS": { "developmentTeam": "YOUR_TEAM_ID" } }
-
+# Development team ID is already configured in src-tauri/tauri.conf.json
 pnpm tauri ios build --export-method debugging
 
 # Install to connected device (requires ios-deploy: brew install ios-deploy)
@@ -54,7 +52,8 @@ Key commands:
 - `select_torrent_file(info_hash, file_index)` - Select video file to play
 - `pause_torrent/resume_torrent/stop_torrent(info_hash)` - Torrent lifecycle
 - `get_stream_url(info_hash, file_index)` - Get HTTP stream URL
-- `open_with_system_player(stream_url)` - Open stream in system player (desktop)
+- `open_with_system_player(stream_url)` - Open stream in system player (desktop only)
+- `http_get(url)` - Proxy HTTP GET through Rust backend to bypass CORS (used by search)
 
 Key events:
 - `torrent-metadata-ready` - Emitted when torrent metadata is parsed, contains file list
@@ -68,6 +67,16 @@ Key events:
 4. The proxy handles HTTP `Range` headers for seeking; rqbit prioritizes pieces around the playback window
 5. Vidstack player loads the stream URL with native HTML5 video element
 
+### Search Architecture
+
+Built-in torrent search is provided by `src/lib/sources.ts` and registered at app startup via `initializeSources()` in `App.tsx`.
+
+- **Search sources** (`src/lib/sources.ts`): 10 built-in providers querying public trackers. Some use JSON APIs (TPB, EZTV, Knaben), others scrape HTML (Nyaa RSS, ACG.RIP, Mikanani, DMHY). All HTTP requests go through the `http_get` Rust command to bypass browser CORS.
+- **Search state** (`src/lib/search.ts`): SolidJS signals with localStorage persistence for history, results, and selected source. Supports single-source search (`search()`) and parallel all-source search (`searchAll()`).
+- **Search UI** (`src/lib/SearchPopup.tsx`): Modal with keyword input, source dropdown, results list, and search history. Selecting a result extracts a magnet URI and starts the torrent.
+
+Results from HTML-scraped sources return raw magnet links or `.torrent` URLs. API-based sources construct magnet links from info hashes with default trackers.
+
 ### Mobile Platform Integration
 
 **Android Bridge** (`src/lib/android.ts`):
@@ -77,7 +86,7 @@ Key events:
 
 The bridge is injected by the Android native layer as `window.WebTorrentPlayerAndroid`.
 
-**iOS**: Uses standard Tauri iOS setup. Configure team ID in `tauri.conf.json` under `bundle.iOS.developmentTeam`.
+**iOS**: Uses standard Tauri iOS setup. Development team ID is already set in `tauri.conf.json` under `bundle.iOS.developmentTeam`.
 
 ### State Management
 
@@ -113,12 +122,13 @@ The frontend detects unsupported formats in `src/lib/video.ts`. The native playe
 
 | File | Purpose |
 |------|---------|
-| `src/App.tsx` | Main UI component with torrent input, file list, and Vidstack player |
+| `src/App.tsx` | Main UI component with torrent input, file list, Vidstack player, and search integration |
 | `src/lib/android.ts` | Android bridge for native features (notifications, orientation, network) |
 | `src/lib/i18n.ts` | Translation dictionaries |
 | `src/lib/video.ts` | Video format detection (MKV, HEVC, etc.) |
 | `src/lib/native-player.ts` | External player integration (VLC, MX Player, etc.) |
 | `src/lib/search.ts` | Search state management with localStorage persistence |
+| `src/lib/sources.ts` | Built-in search source implementations (TPB, Nyaa, DMHY, etc.) |
 | `src/lib/SearchPopup.tsx` | Search UI popup component |
 | `src-tauri/src/lib.rs` | Tauri commands, torrent lifecycle, event emission |
 | `src-tauri/src/state.rs` | AppState, payload structs |
@@ -132,3 +142,4 @@ The frontend detects unsupported formats in `src/lib/video.ts`. The native playe
 - DHT persistence is disabled on mobile (`disable_dht_persistence: true` in `AppState::new`)
 - The frontend never reads torrent files directly; all access is through the Rust proxy
 - Video detection uses mime_guess and file extension checks (`.mp4`, `.mkv`, `.webm`, etc.)
+- `http_get` enforces a 15-second timeout and only allows `http://` and `https://` URLs

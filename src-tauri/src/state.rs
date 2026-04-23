@@ -1,7 +1,18 @@
 use std::{collections::HashSet, path::PathBuf, str::FromStr, sync::Arc};
 
+#[cfg(any(target_os = "android", target_os = "ios"))]
+use std::time::Duration;
+
 use anyhow::{Context, Result};
-use librqbit::{api::TorrentIdOrHash, dht::Id20, ManagedTorrent, Session, SessionOptions};
+use librqbit::{
+    api::TorrentIdOrHash,
+    dht::Id20,
+    ManagedTorrent, Session, SessionOptions,
+};
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+use librqbit::dht::PersistentDhtConfig;
+
 use parking_lot::RwLock;
 use serde::Serialize;
 
@@ -45,7 +56,18 @@ impl AppState {
 
         #[cfg(any(target_os = "android", target_os = "ios"))]
         {
-            session_options.disable_dht_persistence = true;
+            let dht_dir = cache_dir.join("dht");
+            // 安全地尝试启用 DHT 持久化：使用应用缓存目录下的子目录。
+            // 如果目录创建失败（如存储已满、权限异常），回退到禁用持久化，
+            // 确保 DHT 仍可在内存中工作，应用不会因启动失败而崩溃。
+            if std::fs::create_dir_all(&dht_dir).is_ok() {
+                session_options.dht_config = Some(PersistentDhtConfig {
+                    config_filename: Some(dht_dir.join("state.json")),
+                    dump_interval: Some(Duration::from_secs(60)),
+                });
+            } else {
+                session_options.disable_dht_persistence = true;
+            }
         }
 
         let session = Session::new_with_opts(cache_dir.clone(), session_options).await?;
