@@ -42,7 +42,7 @@ pub struct TorrentMetadataPayload {
 }
 
 impl AppState {
-    pub async fn new(cache_dir: PathBuf, download_dir: PathBuf) -> Result<Self> {
+    pub async fn new(_cache_dir: PathBuf, download_dir: PathBuf) -> Result<Self> {
         #[allow(unused_mut)]
         let mut session_options = SessionOptions::default();
 
@@ -102,5 +102,9 @@ impl AppState {
 
     pub fn is_monitored(&self, info_hash: &str) -> bool {
         self.monitored_torrents.read().contains(info_hash)
+    }
+
+    pub fn get_monitored_info_hashes(&self) -> Vec<String> {
+        self.monitored_torrents.read().iter().cloned().collect()
     }
 }
