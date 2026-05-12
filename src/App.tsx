@@ -21,7 +21,8 @@ import {
   Minimize,
   Pause,
   Play,
-  RefreshCcw,
+  RefreshCw,
+  FolderOpen,
   Search,
   Square,
   Video,
@@ -52,6 +53,17 @@ import {
   copyStreamUrl,
   getRecommendedPlayers,
 } from "./lib/native-player";
+import {
+  refreshDownloads,
+  fetchDownloadDir,
+  setSpeedLimit,
+  pauseAll,
+  resumeAll,
+  openDownloadedFile,
+  exportFile,
+  activeDownloads,
+  type DownloadTask,
+} from "./lib/downloads";
 
 type TorrentPlaybackState = "parsing" | "downloading" | "seeding" | "paused";
 
@@ -342,6 +354,106 @@ function isSupportedTorrentInput(value: string) {
   }
 }
 
+function DownloadTaskItem(props: { task: DownloadTask }) {
+  const t = props.task;
+  return (
+    <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-medium text-white">{t.name}</p>
+          <p class="mt-0.5 text-xs text-slate-400">
+            {t.state}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="shrink-0 rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-300 transition hover:bg-white/10"
+          onClick={() => openDownloadedFile(t.infoHash).catch(console.error)}
+          aria-label="Open in file manager"
+        >
+          <FolderOpen class="h-4 w-4" />
+        </button>
+      </div>
+      <Show when={t.progressPercent > 0 && t.progressPercent < 100}>
+        <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          <div
+            class="h-full rounded-full bg-sky-500 transition-all"
+            style={{ width: `${t.progressPercent}%` }}
+          />
+        </div>
+        <p class="mt-1 text-xs text-slate-500">{t.progressPercent}%</p>
+      </Show>
+    </div>
+  );
+}
+
+function DownloadsTab() {
+  const [loading, setLoading] = createSignal(false);
+
+  onMount(async () => {
+    await fetchDownloadDir();
+    await refreshDownloads();
+  });
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      await refreshDownloads();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  createEffect(() => {
+    const interval = setInterval(refresh, 5000);
+    onCleanup(() => clearInterval(interval));
+  });
+
+  return (
+    <div class="mt-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-medium text-white">Downloads</h2>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+            onClick={() => pauseAll().then(refresh).catch(console.error)}
+          >
+            Pause All
+          </button>
+          <button
+            type="button"
+            class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+            onClick={() => resumeAll().then(refresh).catch(console.error)}
+          >
+            Resume All
+          </button>
+          <button
+            type="button"
+            class="rounded-lg border border-white/10 bg-white/5 p-1 text-slate-300 transition hover:bg-white/10"
+            onClick={() => void refresh()}
+            aria-label="Refresh"
+          >
+            <RefreshCw class={`h-3.5 w-3.5 ${loading() ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+      </div>
+      <Show
+        when={activeDownloads().length > 0}
+        fallback={
+          <p class="mt-3 text-xs text-slate-500">
+            No active downloads. Start streaming a torrent to download files.
+          </p>
+        }
+      >
+        <div class="mt-3 flex flex-col gap-2">
+          <For each={activeDownloads()}>{(t) => <DownloadTaskItem task={t} />}</For>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
 function App() {
   const [magnet, setMagnet] = createSignal("");
   const [currentInfoHash, setCurrentInfoHash] = createSignal<string | null>(
@@ -366,6 +478,7 @@ function App() {
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [isSelecting, setIsSelecting] = createSignal(false);
   const [isDraggingTorrent, setIsDraggingTorrent] = createSignal(false);
+const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream");
   const [networkStatus, setNetworkStatus] =
     createSignal<AndroidNetworkStatus | null>(null);
   const [networkNotice, setNetworkNotice] = createSignal<NetworkNotice | null>(
@@ -1267,14 +1380,43 @@ function App() {
                   )
                 }
               >
-                {i18nStore.locale() === "en" ? "中文" : "EN"}
+{i18nStore.locale() === "en" ? "中文" : "EN"}
+              </button>
+            </div>
+            <div class="flex gap-1">
+              <button
+                type="button"
+                class={`rounded px-3 py-1 text-xs transition ${
+                  activeTab() === "stream"
+                    ? "bg-sky-500 text-slate-950"
+                    : "text-slate-400 hover:text-white"
+                }`}
+                onClick={() => setActiveTab("stream")}
+              >
+                Stream
+              </button>
+              <button
+                type="button"
+                class={`rounded px-3 py-1 text-xs transition ${
+                  activeTab() === "downloads"
+                    ? "bg-sky-500 text-slate-950"
+                    : "text-slate-400 hover:text-white"
+                }`}
+                onClick={() => setActiveTab("downloads")}
+              >
+                Downloads
               </button>
             </div>
           </div>
 
-          <div
-            class={`mt-4 rounded-[1.5rem] border border-dashed p-2 transition ${
-              isDraggingTorrent()
+          <Show when={activeTab() === "downloads"}>
+            <DownloadsTab />
+          </Show>
+
+          <Show when={activeTab() === "stream"}>
+            <div
+              class={`mt-4 rounded-[1.5rem] border border-dashed p-2 transition ${
+                isDraggingTorrent()
                 ? "border-sky-400 bg-sky-500/10"
                 : "border-white/10 bg-slate-900/30"
             }`}
@@ -1341,6 +1483,7 @@ function App() {
               />
             </div>
           </div>
+          </Show>
 
           <Show when={isDraggingTorrent()}>
             <p class="mt-2 text-xs text-sky-300">
