@@ -361,9 +361,7 @@ function DownloadTaskItem(props: { task: DownloadTask }) {
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-medium text-white">{t.name}</p>
-          <p class="mt-0.5 text-xs text-slate-400">
-            {t.state}
-          </p>
+          <p class="mt-0.5 text-xs text-slate-400">{t.state}</p>
         </div>
         <button
           type="button"
@@ -434,7 +432,9 @@ function DownloadsTab() {
             onClick={() => void refresh()}
             aria-label="Refresh"
           >
-            <RefreshCw class={`h-3.5 w-3.5 ${loading() ? "animate-spin" : ""}`} />
+            <RefreshCw
+              class={`h-3.5 w-3.5 ${loading() ? "animate-spin" : ""}`}
+            />
           </button>
         </div>
       </div>
@@ -447,7 +447,9 @@ function DownloadsTab() {
         }
       >
         <div class="mt-3 flex flex-col gap-2">
-          <For each={activeDownloads()}>{(t) => <DownloadTaskItem task={t} />}</For>
+          <For each={activeDownloads()}>
+            {(t) => <DownloadTaskItem task={t} />}
+          </For>
         </div>
       </Show>
     </div>
@@ -478,7 +480,9 @@ function App() {
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [isSelecting, setIsSelecting] = createSignal(false);
   const [isDraggingTorrent, setIsDraggingTorrent] = createSignal(false);
-const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream");
+  const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">(
+    "stream",
+  );
   const [networkStatus, setNetworkStatus] =
     createSignal<AndroidNetworkStatus | null>(null);
   const [networkNotice, setNetworkNotice] = createSignal<NetworkNotice | null>(
@@ -638,7 +642,8 @@ const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream")
 
   async function handleSearchResultSelect(result: SearchResult) {
     // Set the magnet URL from the search result
-    const url = result.url || (result.hash ? `magnet:?xt=urn:btih:${result.hash}` : "");
+    const url =
+      result.url || (result.hash ? `magnet:?xt=urn:btih:${result.hash}` : "");
     if (!url) {
       setError(i18nStore.t("torrent.invalidInput"));
       return;
@@ -816,7 +821,9 @@ const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream")
 
     const result = await openWithNativePlayer(source, file.name);
     if (!result.success) {
-      setExternalPlayerError(result.error || i18nStore.t("player.noPlayerFound"));
+      setExternalPlayerError(
+        result.error || i18nStore.t("player.noPlayerFound"),
+      );
     } else {
       // Clear any previous error
       setExternalPlayerError(null);
@@ -1311,6 +1318,11 @@ const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream")
         setCurrentInfoHash(event.payload.infoHash);
         setSelectedSubtitleIndex(null);
 
+        // In downloads tab, do not auto-select file for streaming
+        if (activeTab() === "downloads") {
+          return;
+        }
+
         const nextDefaultFile =
           event.payload.files.find((file) => file.isVideo) ??
           event.payload.files[0];
@@ -1363,9 +1375,33 @@ const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream")
               WebTorrentPlayer
             </p>
             <div class="flex items-center gap-2">
+              <div class="flex gap-1">
+                <button
+                  type="button"
+                  class={`rounded px-3 py-1 text-xs transition ${
+                    activeTab() === "stream"
+                      ? "bg-sky-500 text-slate-950"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                  onClick={() => setActiveTab("stream")}
+                >
+                  Stream
+                </button>
+                <button
+                  type="button"
+                  class={`rounded px-3 py-1 text-xs transition ${
+                    activeTab() === "downloads"
+                      ? "bg-sky-500 text-slate-950"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                  onClick={() => setActiveTab("downloads")}
+                >
+                  Downloads
+                </button>
+              </div>
               <button
                 type="button"
-                class="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-white/10"
+                class="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-white/10 ml-auto"
                 onClick={() => setIsSearchPopupOpen(true)}
                 aria-label="Search torrents"
               >
@@ -1380,31 +1416,7 @@ const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream")
                   )
                 }
               >
-{i18nStore.locale() === "en" ? "中文" : "EN"}
-              </button>
-            </div>
-            <div class="flex gap-1">
-              <button
-                type="button"
-                class={`rounded px-3 py-1 text-xs transition ${
-                  activeTab() === "stream"
-                    ? "bg-sky-500 text-slate-950"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                onClick={() => setActiveTab("stream")}
-              >
-                Stream
-              </button>
-              <button
-                type="button"
-                class={`rounded px-3 py-1 text-xs transition ${
-                  activeTab() === "downloads"
-                    ? "bg-sky-500 text-slate-950"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                onClick={() => setActiveTab("downloads")}
-              >
-                Downloads
+                {i18nStore.locale() === "en" ? "中文" : "EN"}
               </button>
             </div>
           </div>
@@ -1417,72 +1429,72 @@ const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream")
             <div
               class={`mt-4 rounded-[1.5rem] border border-dashed p-2 transition ${
                 isDraggingTorrent()
-                ? "border-sky-400 bg-sky-500/10"
-                : "border-white/10 bg-slate-900/30"
-            }`}
-            onDragEnter={(event) => {
-              if (hasDraggedFiles(event)) {
-                setIsDraggingTorrent(true);
-              }
-            }}
-            onDragOver={(event) => {
-              if (hasDraggedFiles(event)) {
-                event.preventDefault();
-                event.dataTransfer!.dropEffect = "copy";
-                setIsDraggingTorrent(true);
-              }
-            }}
-            onDragLeave={() => setIsDraggingTorrent(false)}
-            onDrop={(event) => void handleTorrentDrop(event)}
-          >
-            <div class="flex items-center gap-2">
-              <input
-                class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-400"
-                placeholder={i18nStore.t("torrent.pasteMagnetHint")}
-                value={magnet()}
-                onInput={(event) => setMagnet(event.currentTarget.value)}
-                onKeyDown={(event) =>
-                  event.key === "Enter" && void handleStart()
+                  ? "border-sky-400 bg-sky-500/10"
+                  : "border-white/10 bg-slate-900/30"
+              }`}
+              onDragEnter={(event) => {
+                if (hasDraggedFiles(event)) {
+                  setIsDraggingTorrent(true);
                 }
-              />
-              <button
-                type="button"
-                class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500 text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={() => void handleStart()}
-                disabled={isSubmitting()}
-                aria-label="Start torrent"
-              >
-                <Show
-                  when={isSubmitting()}
-                  fallback={<Play class="h-5 w-5 fill-current" />}
+              }}
+              onDragOver={(event) => {
+                if (hasDraggedFiles(event)) {
+                  event.preventDefault();
+                  event.dataTransfer!.dropEffect = "copy";
+                  setIsDraggingTorrent(true);
+                }
+              }}
+              onDragLeave={() => setIsDraggingTorrent(false)}
+              onDrop={(event) => void handleTorrentDrop(event)}
+            >
+              <div class="flex items-center gap-2">
+                <input
+                  class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-400"
+                  placeholder={i18nStore.t("torrent.pasteMagnetHint")}
+                  value={magnet()}
+                  onInput={(event) => setMagnet(event.currentTarget.value)}
+                  onKeyDown={(event) =>
+                    event.key === "Enter" && void handleStart()
+                  }
+                />
+                <button
+                  type="button"
+                  class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500 text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => void handleStart()}
+                  disabled={isSubmitting()}
+                  aria-label="Start torrent"
                 >
-                  <LoaderCircle class="h-5 w-5 animate-spin" />
-                </Show>
-              </button>
-            </div>
+                  <Show
+                    when={isSubmitting()}
+                    fallback={<Play class="h-5 w-5 fill-current" />}
+                  >
+                    <LoaderCircle class="h-5 w-5 animate-spin" />
+                  </Show>
+                </button>
+              </div>
 
-            <div class="mt-2 flex items-center justify-between gap-2">
-              <p class="text-xs text-slate-400">
-                {i18nStore.t("torrent.supportsMagnet")}
-              </p>
-              <button
-                type="button"
-                class="inline-flex items-center shrink-0 gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
-                onClick={() => torrentFileInput?.click()}
-                disabled={isSubmitting()}
-              >
-                <FileUp class="h-4 w-4" />
-                {i18nStore.t("common.selectFile")}
-              </button>
-              <input
-                ref={torrentFileInput}
-                type="file"
-                accept=".torrent,application/x-bittorrent"
-                class="hidden"
-                onChange={(event) => void handleTorrentFileSelection(event)}
-              />
+              <div class="mt-2 flex items-center justify-between gap-2">
+                <p class="text-xs text-slate-400">
+                  {i18nStore.t("torrent.supportsMagnet")}
+                </p>
+                <button
+                  type="button"
+                  class="inline-flex items-center shrink-0 gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
+                  onClick={() => torrentFileInput?.click()}
+                  disabled={isSubmitting()}
+                >
+                  <FileUp class="h-4 w-4" />
+                  {i18nStore.t("common.selectFile")}
+                </button>
+                <input
+                  ref={torrentFileInput}
+                  type="file"
+                  accept=".torrent,application/x-bittorrent"
+                  class="hidden"
+                  onChange={(event) => void handleTorrentFileSelection(event)}
+                />
+              </div>
             </div>
-          </div>
           </Show>
 
           <Show when={isDraggingTorrent()}>
@@ -1516,396 +1528,397 @@ const [activeTab, setActiveTab] = createSignal<"stream" | "downloads">("stream")
       <main
         class={`flex flex-1 flex-col ${playerFullscreen() ? "" : "gap-4 px-4 py-4"}`}
       >
-        <section
-          class={`overflow-hidden bg-black shadow-2xl shadow-black/30 ${
-            playerFullscreen()
-              ? "fixed inset-0 z-40 rounded-none border-0"
-              : "player-sticky-top sticky z-30 rounded-xl border border-white/10"
-          }`}
-        >
-          <div
-            ref={playerSurface}
-            class={`relative bg-gradient-to-br from-slate-900 to-black ${
-              playerFullscreen() ? "h-full w-full" : "aspect-video w-full"
+        <Show when={activeTab() === "stream"}>
+          <section
+            class={`overflow-hidden bg-black shadow-2xl shadow-black/30 ${
+              playerFullscreen()
+                ? "fixed inset-0 z-40 rounded-none border-0"
+                : "player-sticky-top sticky z-30 rounded-xl border border-white/10"
             }`}
-            onPointerDown={handlePlayerSurfaceInteract}
-            onPointerMove={handlePlayerSurfaceInteract}
           >
-            <media-player
-              ref={(element) => {
-                player = element as TorrentPlayerElement;
-              }}
-              title={selectedFile()?.name ?? "P2P Stream"}
-              class="h-full w-full"
-              autoplay
-              playsinline
-              crossorigin
+            <div
+              ref={playerSurface}
+              class={`relative bg-gradient-to-br from-slate-900 to-black ${
+                playerFullscreen() ? "h-full w-full" : "aspect-video w-full"
+              }`}
+              onPointerDown={handlePlayerSurfaceInteract}
+              onPointerMove={handlePlayerSurfaceInteract}
             >
-              <media-provider />
-            </media-player>
-
-            {/* External Player Overlay */}
-            <Show when={needsExternalPlayer() && videoSrc()}>
-              <div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-sm">
-                <div class="flex max-w-md flex-col items-center gap-5 p-6 text-center">
-                  <div class="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
-                      <circle cx="17" cy="7" r="5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-semibold text-white">
-                      {i18nStore.t("player.externalPlayerTitle")}
-                    </h3>
-                    <p class="mt-2 text-sm text-slate-400">
-                      {i18nStore.t("player.externalPlayerDesc")}
-                    </p>
-                    <p class="mt-1 text-xs text-slate-500">
-                      {i18nStore.t("player.recommendedPlayers")}:{" "}
-                      {getRecommendedPlayers().join(", ")}
-                    </p>
-                  </div>
-                  <Show when={externalPlayerError()}>
-                    <div class="w-full rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                      {externalPlayerError()}
-                    </div>
-                  </Show>
-                  <div class="flex w-full flex-col gap-2">
-                    <button
-                      type="button"
-                      class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-sky-600"
-                      onClick={() => void handleOpenExternalPlayer()}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      >
-                        <polygon points="5 3 19 12 5 21 5 3" />
-                      </svg>
-                      {i18nStore.t("player.openWithSystemPlayer")}
-                    </button>
-                    <button
-                      type="button"
-                      class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10"
-                      onClick={() => void handleCopyStreamUrl()}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      >
-                        <rect
-                          width="14"
-                          height="14"
-                          x="8"
-                          y="8"
-                          rx="2"
-                          ry="2"
-                        />
-                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                      </svg>
-                      {i18nStore.t("player.copyStreamUrl")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </Show>
-
-            <Show when={!videoSrc()}>
-              <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-black text-slate-500">
-                <div class="flex flex-col items-center justify-center gap-3">
-                  <Video class="h-10 w-10" />
-                  <div class="text-center">
-                    <p class="text-sm font-medium text-slate-300">
-                      {i18nStore.t("player.waitingForFile")}
-                    </p>
-                    <p class="mt-1 text-xs text-slate-500">
-                      {metadata()
-                        ? i18nStore.t("player.selectOrWait")
-                        : i18nStore.t("player.enterMagnetLink")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Show>
-            <Show when={videoSrc()}>
-              <div
-                class={`absolute inset-0 z-10 flex flex-col justify-between transition-opacity duration-300 ${
-                  showPlayerChrome()
-                    ? "pointer-events-auto opacity-100"
-                    : "pointer-events-none opacity-0"
-                }`}
+              <media-player
+                ref={(element) => {
+                  player = element as TorrentPlayerElement;
+                }}
+                title={selectedFile()?.name ?? "P2P Stream"}
+                class="h-full w-full"
+                autoplay
+                playsinline
+                crossorigin
               >
-                <div
-                  class="flex items-start justify-between bg-gradient-to-b from-black/70 via-black/20 to-transparent px-4 py-3"
-                  onPointerDown={(event) => event.stopPropagation()}
-                >
-                  <div class="min-w-0 flex-1" />
-                  <p class="mx-3 truncate text-center text-xs font-medium text-white/90">
-                    {selectedFile()?.name}
-                  </p>
-                  <button
-                    type="button"
-                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/30 text-slate-200 backdrop-blur transition hover:bg-black/50"
-                    onClick={retryStream}
-                    aria-label="Retry stream"
-                  >
-                    <RefreshCcw class="h-4 w-4" />
-                  </button>
-                </div>
+                <media-provider />
+              </media-player>
 
-                <div
-                  class="px-4 py-2"
-                  onPointerDown={(event) => event.stopPropagation()}
-                >
-                  <div class="mb-3 flex items-center justify-between gap-3 text-[11px] text-slate-300">
-                    <span>
-                      {playerWaiting()
-                        ? i18nStore.t("player.buffering")
-                        : playerPaused()
-                          ? i18nStore.t("player.paused")
-                          : i18nStore.t("player.playing")}
-                    </span>
-                    <span>
-                      {formatPlaybackTime(playerCurrentTime())} /{" "}
-                      {formatPlaybackTime(playerDuration())}
-                    </span>
-                  </div>
-
-                  <div class="relative mt-2 h-4">
-                    <div class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        class="h-full rounded-full bg-white/25 transition-all"
-                        style={{ width: `${stats()?.progressPercent ?? 0}%` }}
-                      />
+              {/* External Player Overlay */}
+              <Show when={needsExternalPlayer() && videoSrc()}>
+                <div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-sm">
+                  <div class="flex max-w-md flex-col items-center gap-5 p-6 text-center">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
+                        <circle cx="17" cy="7" r="5" />
+                      </svg>
                     </div>
-                    <div
-                      class="absolute inset-y-0 left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-sky-400 transition-all"
-                      style={{ width: `${playbackProgressPercent()}%` }}
-                    />
-                    <div
-                      class="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-sky-300 shadow-[0_0_0_2px_rgba(15,23,42,0.6)] transition-all"
-                      style={{
-                        left: `clamp(0px, calc(${playbackProgressPercent()}% - 6px), calc(100% - 12px))`,
-                      }}
-                    />
-                    <input
-                      type="range"
-                      min="0"
-                      max={Math.max(playerDuration(), 0)}
-                      step="0.1"
-                      value={Math.min(
-                        playerCurrentTime(),
-                        playerDuration() || 0,
-                      )}
-                      class="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
-                      onInput={handleSeek}
-                      onPointerDown={() => revealPlayerChrome(3200)}
-                      disabled={playerDuration() <= 0}
-                    />
+                    <div>
+                      <h3 class="text-lg font-semibold text-white">
+                        {i18nStore.t("player.externalPlayerTitle")}
+                      </h3>
+                      <p class="mt-2 text-sm text-slate-400">
+                        {i18nStore.t("player.externalPlayerDesc")}
+                      </p>
+                      <p class="mt-1 text-xs text-slate-500">
+                        {i18nStore.t("player.recommendedPlayers")}:{" "}
+                        {getRecommendedPlayers().join(", ")}
+                      </p>
+                    </div>
+                    <Show when={externalPlayerError()}>
+                      <div class="w-full rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                        {externalPlayerError()}
+                      </div>
+                    </Show>
+                    <div class="flex w-full flex-col gap-2">
+                      <button
+                        type="button"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-sky-600"
+                        onClick={() => void handleOpenExternalPlayer()}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        {i18nStore.t("player.openWithSystemPlayer")}
+                      </button>
+                      <button
+                        type="button"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10"
+                        onClick={() => void handleCopyStreamUrl()}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <rect
+                            width="14"
+                            height="14"
+                            x="8"
+                            y="8"
+                            rx="2"
+                            ry="2"
+                          />
+                          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                        </svg>
+                        {i18nStore.t("player.copyStreamUrl")}
+                      </button>
+                    </div>
                   </div>
-                  <div class="relative mt-4 flex items-center gap-3">
+                </div>
+              </Show>
+
+              <Show when={!videoSrc() && activeTab() === "stream"}>
+                <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-black text-slate-500">
+                  <div class="flex flex-col items-center justify-center gap-3">
+                    <Video class="h-10 w-10" />
+                    <div class="text-center">
+                      <p class="text-sm font-medium text-slate-300">
+                        {i18nStore.t("player.waitingForFile")}
+                      </p>
+                      <p class="mt-1 text-xs text-slate-500">
+                        {metadata()
+                          ? i18nStore.t("player.selectOrWait")
+                          : i18nStore.t("player.enterMagnetLink")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Show>
+              <Show when={videoSrc()}>
+                <div
+                  class={`absolute inset-0 z-10 flex flex-col justify-between transition-opacity duration-300 ${
+                    showPlayerChrome()
+                      ? "pointer-events-auto opacity-100"
+                      : "pointer-events-none opacity-0"
+                  }`}
+                >
+                  <div
+                    class="flex items-start justify-between bg-gradient-to-b from-black/70 via-black/20 to-transparent px-4 py-3"
+                    onPointerDown={(event) => event.stopPropagation()}
+                  >
+                    <div class="min-w-0 flex-1" />
+                    <p class="mx-3 truncate text-center text-xs font-medium text-white/90">
+                      {selectedFile()?.name}
+                    </p>
                     <button
                       type="button"
-                      class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={() => {
-                        revealPlayerChrome(3200);
-                        void handleTogglePlayback();
-                      }}
-                      disabled={!selectedVideoSource()}
-                      aria-label={
-                        playerPaused()
-                          ? i18nStore.t("player.play")
-                          : i18nStore.t("player.pause")
-                      }
+                      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/30 text-slate-200 backdrop-blur transition hover:bg-black/50"
+                      onClick={retryStream}
+                      aria-label="Retry stream"
                     >
-                      <Show
-                        when={playerPaused()}
-                        fallback={<Pause class="h-4 w-4 fill-current" />}
-                      >
-                        <Play class="h-4 w-4 fill-current" />
-                      </Show>
+                      <RefreshCw class="h-4 w-4" />
                     </button>
+                  </div>
 
-                    <button
-                      type="button"
-                      class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-slate-200 transition hover:bg-white/20"
-                      onClick={() => {
-                        revealPlayerChrome(3200);
-                        handleToggleMute();
-                      }}
-                      aria-label={
-                        playerMuted()
-                          ? i18nStore.t("player.unmute")
-                          : i18nStore.t("player.mute")
-                      }
-                    >
-                      <Show
-                        when={playerMuted() || visiblePlayerVolume() === 0}
-                        fallback={<Volume2 class="h-3.5 w-3.5" />}
-                      >
-                        <VolumeX class="h-3.5 w-3.5" />
-                      </Show>
-                    </button>
-
-                    <div class="flex flex-1 items-center gap-3">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={Math.round(visiblePlayerVolume() * 100)}
-                        class="h-1.5 w-full cursor-pointer accent-sky-400"
-                        onInput={(event) => {
-                          revealPlayerChrome(3200);
-                          handleVolumeChange(event);
-                        }}
-                        aria-label={i18nStore.t("player.volume")}
-                      />
-                      <span class="w-10 shrink-0 text-right text-[10px] text-slate-300">
-                        {Math.round(visiblePlayerVolume() * 100)}%
+                  <div
+                    class="px-4 py-2"
+                    onPointerDown={(event) => event.stopPropagation()}
+                  >
+                    <div class="mb-3 flex items-center justify-between gap-3 text-[11px] text-slate-300">
+                      <span>
+                        {playerWaiting()
+                          ? i18nStore.t("player.buffering")
+                          : playerPaused()
+                            ? i18nStore.t("player.paused")
+                            : i18nStore.t("player.playing")}
+                      </span>
+                      <span>
+                        {formatPlaybackTime(playerCurrentTime())} /{" "}
+                        {formatPlaybackTime(playerDuration())}
                       </span>
                     </div>
 
-                    <div ref={subtitleMenuRef} class="relative shrink-0">
+                    <div class="relative mt-2 h-4">
+                      <div class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          class="h-full rounded-full bg-white/25 transition-all"
+                          style={{ width: `${stats()?.progressPercent ?? 0}%` }}
+                        />
+                      </div>
+                      <div
+                        class="absolute inset-y-0 left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-sky-400 transition-all"
+                        style={{ width: `${playbackProgressPercent()}%` }}
+                      />
+                      <div
+                        class="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-sky-300 shadow-[0_0_0_2px_rgba(15,23,42,0.6)] transition-all"
+                        style={{
+                          left: `clamp(0px, calc(${playbackProgressPercent()}% - 6px), calc(100% - 12px))`,
+                        }}
+                      />
+                      <input
+                        type="range"
+                        min="0"
+                        max={Math.max(playerDuration(), 0)}
+                        step="0.1"
+                        value={Math.min(
+                          playerCurrentTime(),
+                          playerDuration() || 0,
+                        )}
+                        class="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                        onInput={handleSeek}
+                        onPointerDown={() => revealPlayerChrome(3200)}
+                        disabled={playerDuration() <= 0}
+                      />
+                    </div>
+                    <div class="relative mt-4 flex items-center gap-3">
                       <button
                         type="button"
-                        class={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-slate-200 transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                          isSubtitleMenuOpen() || selectedSubtitleFile()
-                            ? "border-sky-400/50 bg-sky-500/20 text-sky-100 hover:bg-sky-500/30"
-                            : "border-white/10 bg-white/10 hover:bg-white/20"
-                        }`}
+                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
                         onClick={() => {
                           revealPlayerChrome(3200);
-                          handleToggleSubtitleMenu();
+                          void handleTogglePlayback();
                         }}
-                        disabled={subtitleFiles().length === 0}
+                        disabled={!selectedVideoSource()}
                         aria-label={
-                          selectedSubtitleFile()
-                            ? i18nStore.t("player.toggleSubtitles")
-                            : i18nStore.t("player.openSubtitleMenu")
+                          playerPaused()
+                            ? i18nStore.t("player.play")
+                            : i18nStore.t("player.pause")
                         }
-                        aria-haspopup="menu"
-                        aria-expanded={isSubtitleMenuOpen()}
                       >
-                        <Captions class="h-3.5 w-3.5" />
+                        <Show
+                          when={playerPaused()}
+                          fallback={<Pause class="h-4 w-4 fill-current" />}
+                        >
+                          <Play class="h-4 w-4 fill-current" />
+                        </Show>
                       </button>
 
-                      <Show when={isSubtitleMenuOpen()}>
-                        <div class="absolute bottom-full right-0 z-10 mb-3 w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl shadow-black/40 backdrop-blur">
-                          <div class="border-b border-white/10 px-4 py-3">
-                            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
-                              {i18nStore.t("player.subtitleTrack")}
-                            </p>
-                            <p class="mt-1 text-sm text-slate-300">
-                              {selectedSubtitleFile()?.name ??
-                                i18nStore.t("player.subtitlesOff")}
-                            </p>
-                          </div>
-                          <div class="max-h-64 overflow-y-auto p-2">
-                            <button
-                              type="button"
-                              class={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm transition ${
-                                selectedSubtitleIndex() === null
-                                  ? "bg-sky-500/15 text-sky-100"
-                                  : "text-slate-200 hover:bg-white/5"
-                              }`}
-                              onClick={() => handleSelectSubtitle(null)}
-                            >
-                              <span>
-                                {i18nStore.t("player.turnOffSubtitles")}
-                              </span>
-                              <Show when={selectedSubtitleIndex() === null}>
-                                <span class="text-xs text-sky-300">
-                                  {i18nStore.t("player.current")}
+                      <button
+                        type="button"
+                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-slate-200 transition hover:bg-white/20"
+                        onClick={() => {
+                          revealPlayerChrome(3200);
+                          handleToggleMute();
+                        }}
+                        aria-label={
+                          playerMuted()
+                            ? i18nStore.t("player.unmute")
+                            : i18nStore.t("player.mute")
+                        }
+                      >
+                        <Show
+                          when={playerMuted() || visiblePlayerVolume() === 0}
+                          fallback={<Volume2 class="h-3.5 w-3.5" />}
+                        >
+                          <VolumeX class="h-3.5 w-3.5" />
+                        </Show>
+                      </button>
+
+                      <div class="flex flex-1 items-center gap-3">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={Math.round(visiblePlayerVolume() * 100)}
+                          class="h-1.5 w-full cursor-pointer accent-sky-400"
+                          onInput={(event) => {
+                            revealPlayerChrome(3200);
+                            handleVolumeChange(event);
+                          }}
+                          aria-label={i18nStore.t("player.volume")}
+                        />
+                        <span class="w-10 shrink-0 text-right text-[10px] text-slate-300">
+                          {Math.round(visiblePlayerVolume() * 100)}%
+                        </span>
+                      </div>
+
+                      <div ref={subtitleMenuRef} class="relative shrink-0">
+                        <button
+                          type="button"
+                          class={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-slate-200 transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                            isSubtitleMenuOpen() || selectedSubtitleFile()
+                              ? "border-sky-400/50 bg-sky-500/20 text-sky-100 hover:bg-sky-500/30"
+                              : "border-white/10 bg-white/10 hover:bg-white/20"
+                          }`}
+                          onClick={() => {
+                            revealPlayerChrome(3200);
+                            handleToggleSubtitleMenu();
+                          }}
+                          disabled={subtitleFiles().length === 0}
+                          aria-label={
+                            selectedSubtitleFile()
+                              ? i18nStore.t("player.toggleSubtitles")
+                              : i18nStore.t("player.openSubtitleMenu")
+                          }
+                          aria-haspopup="menu"
+                          aria-expanded={isSubtitleMenuOpen()}
+                        >
+                          <Captions class="h-3.5 w-3.5" />
+                        </button>
+
+                        <Show when={isSubtitleMenuOpen()}>
+                          <div class="absolute bottom-full right-0 z-10 mb-3 w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl shadow-black/40 backdrop-blur">
+                            <div class="border-b border-white/10 px-4 py-3">
+                              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
+                                {i18nStore.t("player.subtitleTrack")}
+                              </p>
+                              <p class="mt-1 text-sm text-slate-300">
+                                {selectedSubtitleFile()?.name ??
+                                  i18nStore.t("player.subtitlesOff")}
+                              </p>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto p-2">
+                              <button
+                                type="button"
+                                class={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm transition ${
+                                  selectedSubtitleIndex() === null
+                                    ? "bg-sky-500/15 text-sky-100"
+                                    : "text-slate-200 hover:bg-white/5"
+                                }`}
+                                onClick={() => handleSelectSubtitle(null)}
+                              >
+                                <span>
+                                  {i18nStore.t("player.turnOffSubtitles")}
                                 </span>
-                              </Show>
-                            </button>
-                            <For each={subtitleFiles()}>
-                              {(file) => (
-                                <button
-                                  type="button"
-                                  class={`mt-1 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left text-sm transition ${
-                                    selectedSubtitleIndex() === file.index
-                                      ? "bg-sky-500/15 text-sky-100"
-                                      : "text-slate-200 hover:bg-white/5"
-                                  }`}
-                                  onClick={() =>
-                                    handleSelectSubtitle(file.index)
-                                  }
-                                >
-                                  <span class="min-w-0 flex-1 truncate">
-                                    {createSubtitleLabel(file)}
+                                <Show when={selectedSubtitleIndex() === null}>
+                                  <span class="text-xs text-sky-300">
+                                    {i18nStore.t("player.current")}
                                   </span>
-                                  <Show
-                                    when={
+                                </Show>
+                              </button>
+                              <For each={subtitleFiles()}>
+                                {(file) => (
+                                  <button
+                                    type="button"
+                                    class={`mt-1 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left text-sm transition ${
                                       selectedSubtitleIndex() === file.index
+                                        ? "bg-sky-500/15 text-sky-100"
+                                        : "text-slate-200 hover:bg-white/5"
+                                    }`}
+                                    onClick={() =>
+                                      handleSelectSubtitle(file.index)
                                     }
                                   >
-                                    <span class="shrink-0 text-xs text-sky-300">
-                                      {i18nStore.t("player.current")}
+                                    <span class="min-w-0 flex-1 truncate">
+                                      {createSubtitleLabel(file)}
                                     </span>
-                                  </Show>
-                                </button>
-                              )}
-                            </For>
+                                    <Show
+                                      when={
+                                        selectedSubtitleIndex() === file.index
+                                      }
+                                    >
+                                      <span class="shrink-0 text-xs text-sky-300">
+                                        {i18nStore.t("player.current")}
+                                      </span>
+                                    </Show>
+                                  </button>
+                                )}
+                              </For>
+                            </div>
                           </div>
-                        </div>
-                      </Show>
-                    </div>
+                        </Show>
+                      </div>
 
-                    <button
-                      type="button"
-                      class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-slate-200 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={() => {
-                        revealPlayerChrome(3200);
-                        void handleToggleFullscreen();
-                      }}
-                      disabled={!selectedVideoSource()}
-                      aria-label={
-                        playerFullscreen()
-                          ? i18nStore.t("player.exitFullscreen")
-                          : i18nStore.t("player.enterFullscreen")
-                      }
-                    >
-                      <Show
-                        when={playerFullscreen()}
-                        fallback={<Maximize class="h-3.5 w-3.5" />}
+                      <button
+                        type="button"
+                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-slate-200 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+                        onClick={() => {
+                          revealPlayerChrome(3200);
+                          void handleToggleFullscreen();
+                        }}
+                        disabled={!selectedVideoSource()}
+                        aria-label={
+                          playerFullscreen()
+                            ? i18nStore.t("player.exitFullscreen")
+                            : i18nStore.t("player.enterFullscreen")
+                        }
                       >
-                        <Minimize class="h-3.5 w-3.5" />
-                      </Show>
-                    </button>
+                        <Show
+                          when={playerFullscreen()}
+                          fallback={<Maximize class="h-3.5 w-3.5" />}
+                        >
+                          <Minimize class="h-3.5 w-3.5" />
+                        </Show>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Show>
-          </div>
-        </section>
-
+              </Show>
+            </div>
+          </section>
+        </Show>
         <Show when={!playerFullscreen()}>
           <section class="rounded-3xl border border-white/10 bg-slate-900/80 p-4">
             <div class="flex items-center justify-between gap-3">
