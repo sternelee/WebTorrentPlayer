@@ -1,5 +1,8 @@
+mod download;
 mod server;
 mod state;
+
+use download::get_default_download_dir;
 
 use std::{collections::HashSet, path::Path, sync::Arc, time::Duration};
 
@@ -393,10 +396,12 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let cache_dir = app.path().cache_dir()?.join("torrents");
+            let download_dir = get_default_download_dir();
 
             std::fs::create_dir_all(&cache_dir)?;
+            std::fs::create_dir_all(&download_dir).ok();
 
-            let state = Arc::new(tauri::async_runtime::block_on(AppState::new(cache_dir))?);
+            let state = Arc::new(tauri::async_runtime::block_on(AppState::new(cache_dir, download_dir))?);
             let port = tauri::async_runtime::block_on(server::start_server(state.clone()))?;
 
             *state.server_port.write() = port;

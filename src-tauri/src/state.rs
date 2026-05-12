@@ -9,6 +9,9 @@ pub struct AppState {
     pub session: Arc<Session>,
     pub server_port: RwLock<u16>,
     monitored_torrents: RwLock<HashSet<String>>,
+    pub download_dir: RwLock<PathBuf>,
+    pub speed_limit_down: RwLock<Option<u64>>,
+    pub speed_limit_up: RwLock<Option<u64>>,
 }
 
 #[derive(Clone, Serialize)]
@@ -39,7 +42,7 @@ pub struct TorrentMetadataPayload {
 }
 
 impl AppState {
-    pub async fn new(cache_dir: PathBuf) -> Result<Self> {
+    pub async fn new(cache_dir: PathBuf, download_dir: PathBuf) -> Result<Self> {
         #[allow(unused_mut)]
         let mut session_options = SessionOptions::default();
 
@@ -53,6 +56,9 @@ impl AppState {
             session,
             server_port: RwLock::new(0),
             monitored_torrents: RwLock::new(HashSet::new()),
+            download_dir: RwLock::new(download_dir),
+            speed_limit_down: RwLock::new(None),
+            speed_limit_up: RwLock::new(None),
         })
     }
 
