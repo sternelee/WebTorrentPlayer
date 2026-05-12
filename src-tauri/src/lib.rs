@@ -4,7 +4,8 @@ mod state;
 
 use download::{
     get_active_downloads, get_default_download_dir, get_download_dir, list_download_files,
-    pause_all_downloads, resume_all_downloads, set_global_speed_limit,
+    open_in_file_manager, pause_all_downloads, resume_all_downloads, set_global_speed_limit,
+    export_file,
 };
 
 use std::{collections::HashSet, path::Path, sync::Arc, time::Duration};
@@ -427,7 +428,9 @@ pub fn run() {
             get_active_downloads,
             set_global_speed_limit,
             pause_all_downloads,
-            resume_all_downloads
+            resume_all_downloads,
+            export_file,
+            open_in_file_manager
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

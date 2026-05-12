@@ -252,3 +252,74 @@ pub async fn resume_all_downloads(state: State<'_, Arc<AppState>>) -> Result<(),
     }
     Ok(())
 }
+
+#[tauri::command]
+pub async fn export_file(
+    info_hash: String,
+    file_index: usize,
+    state: State<'_, Arc<AppState>>,
+) -> Result<String, String> {
+    #[cfg(target_os = "ios")]
+    {
+        let download_dir = state.download_dir.read().clone();
+        let handle = state.torrent(&info_hash).map_err(|e| e.to_string())?;
+        let filename = handle
+            .with_metadata(|m| m.file_infos.get(file_index).map(|f| f.relative_filename.clone()))
+            .map_err(|e| e.to_string())?
+            .ok_or("file not found")?;
+        let path = download_dir.join(&filename);
+        Ok(path.to_string_lossy().into_owned())
+    }
+
+    #[cfg(not(target_os = "ios"))]
+    {
+        let download_dir = state.download_dir.read().clone();
+        let handle = state.torrent(&info_hash).map_err(|e| e.to_string())?;
+        let filename = handle
+            .with_metadata(|m| m.file_infos.get(file_index).map(|f| f.relative_filename.clone()))
+            .map_err(|e| e.to_string())?
+            .ok_or("file not found")?;
+        let path = download_dir.join(&filename);
+        if path.exists() {
+            Ok(path.to_string_lossy().into_owned())
+        } else {
+            Err("file not found in download directory".to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn open_in_file_manager(path: String) -> Result<(), String> {
+    use std::path::PathBuf;
+    let path = PathBuf::from(&path);
+    if !path.exists() {
+        return Err("File not found".to_string());
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(["-R", &path.to_string_lossy()])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .args(["/select,", &path.to_string_lossy()])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(path.parent().unwrap_or(&path))
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
