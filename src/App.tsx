@@ -49,6 +49,10 @@ import { SearchPopup } from "./lib/SearchPopup";
 import { searchStore, type SearchResult } from "./lib/search";
 import { initializeSources } from "./lib/sources";
 import {
+  httpDownloadAdd,
+  initHttpDownloadListener,
+} from "./lib/http_download";
+import {
   openWithNativePlayer,
   copyStreamUrl,
   getRecommendedPlayers,
@@ -338,19 +342,18 @@ function hasDraggedFiles(event: DragEvent) {
   return types ? Array.from(types).includes("Files") : false;
 }
 
-function isSupportedTorrentInput(value: string) {
-  if (value.startsWith("magnet:?")) {
-    return true;
-  }
-
+/** Classify a pasted / typed string so we can route it to the right engine. */
+type InputKind = "magnet" | "torrent-url" | "http" | null;
+function classifyInput(value: string): InputKind {
+  const v = value.trim();
+  if (v.startsWith("magnet:?")) return "magnet";
   try {
-    const url = new URL(value);
-    return (
-      (url.protocol === "http:" || url.protocol === "https:") &&
-      url.pathname.toLowerCase().endsWith(".torrent")
-    );
+    const url = new URL(v);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    if (url.pathname.toLowerCase().endsWith(".torrent")) return "torrent-url";
+    return "http";
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -630,11 +633,28 @@ function App() {
 
   async function handleStart() {
     const rawInput = magnet().trim();
-    if (!isSupportedTorrentInput(rawInput)) {
+    const kind = classifyInput(rawInput);
+    if (!kind) {
       setError(i18nStore.t("torrent.invalidInput"));
       return;
     }
 
+    if (kind === "http") {
+      // Ordinary HTTP URL → aria2-style multi-segment download.
+      setIsSubmitting(true);
+      setError(null);
+      try {
+        await httpDownloadAdd(rawInput);
+        setMagnet("");
+      } catch (e) {
+        setError(String(e));
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // "magnet" or "torrent-url" → BT engine.
     await launchTorrent(async () =>
       invoke<string>("start_torrent", { magnetUri: rawInput }),
     );
@@ -1302,6 +1322,8 @@ function App() {
     // Register built-in public torrent search sources (TPB, Knaben, YTS, EZTV, Nyaa, etc.)
     initializeSources();
 
+    const stopHttpDownload = await initHttpDownloadListener();
+
     const stopTick = await listen<TorrentTickPayload>(
       "torrent-tick",
       (event) => {
@@ -1363,6 +1385,7 @@ function App() {
       syncAndroidForegroundSession(null);
       void stopTick();
       void stopMetadata();
+      stopHttpDownload();
     });
   });
 

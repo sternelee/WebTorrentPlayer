@@ -1,4 +1,6 @@
 mod download;
+mod http_download;
+mod proxy;
 mod server;
 mod state;
 
@@ -6,6 +8,10 @@ use download::{
     get_active_downloads, get_default_download_dir, get_download_dir, list_download_files,
     open_in_file_manager, pause_all_downloads, resume_all_downloads, set_global_speed_limit,
     export_file,
+};
+use http_download::{
+    http_download_add, http_download_list, http_download_pause, http_download_remove,
+    http_download_resume,
 };
 
 use std::{collections::HashSet, path::Path, sync::Arc, time::Duration};
@@ -391,6 +397,7 @@ async fn open_with_system_player(
         return Err("Use native bridge instead".to_string());
     }
 
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     Ok(())
 }
 
@@ -430,7 +437,12 @@ pub fn run() {
             pause_all_downloads,
             resume_all_downloads,
             export_file,
-            open_in_file_manager
+            open_in_file_manager,
+            http_download_add,
+            http_download_pause,
+            http_download_resume,
+            http_download_remove,
+            http_download_list,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

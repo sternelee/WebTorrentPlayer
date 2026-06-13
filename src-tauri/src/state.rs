@@ -5,6 +5,9 @@ use librqbit::{api::TorrentIdOrHash, dht::Id20, ManagedTorrent, Session, Session
 use parking_lot::RwLock;
 use serde::Serialize;
 
+use crate::http_download::HttpDownloadManager;
+use crate::proxy::detect_socks5_url;
+
 pub struct AppState {
     pub session: Arc<Session>,
     pub server_port: RwLock<u16>,
@@ -12,6 +15,7 @@ pub struct AppState {
     pub download_dir: RwLock<PathBuf>,
     pub speed_limit_down: RwLock<Option<u64>>,
     pub speed_limit_up: RwLock<Option<u64>>,
+    pub http_download_manager: Arc<HttpDownloadManager>,
 }
 
 #[derive(Clone, Serialize)]
@@ -43,47 +47,47 @@ pub struct TorrentMetadataPayload {
 
 impl AppState {
     pub async fn new(_cache_dir: PathBuf, download_dir: PathBuf) -> Result<Self> {
-        #[allow(unused_mut)]
-        let mut session_options = SessionOptions::default();
-
-        #[cfg(any(target_os = "android", target_os = "ios"))]
-        {
-            session_options.disable_dht_persistence = true;
-        }
+        let session_options = SessionOptions {
+            socks_proxy_url: detect_socks5_url(),
+            #[cfg(any(target_os = "android", target_os = "ios"))]
+            disable_dht_persistence: true,
+            ..Default::default()
+        };
 
         #[cfg(not(any(target_os = "android", target_os = "ios")))]
         {
             // Desktop: use download_dir as librqbit's output directory
             let session = Session::new_with_opts(download_dir.clone(), session_options).await?;
-            return Ok(Self {
-                session,
-                server_port: RwLock::new(0),
-                monitored_torrents: RwLock::new(HashSet::new()),
-                download_dir: RwLock::new(download_dir),
-                speed_limit_down: RwLock::new(None),
-                speed_limit_up: RwLock::new(None),
-            });
-        }
-
-        #[cfg(any(target_os = "android", target_os = "ios"))]
-        {
-            // Mobile: use cache_dir, export to Downloads via MediaStore later
-            let session = Session::new_with_opts(cache_dir.clone(), session_options).await?;
             Ok(Self {
                 session,
                 server_port: RwLock::new(0),
                 monitored_torrents: RwLock::new(HashSet::new()),
-                download_dir: RwLock::new(download_dir),
+                download_dir: RwLock::new(download_dir.clone()),
                 speed_limit_down: RwLock::new(None),
                 speed_limit_up: RwLock::new(None),
+                http_download_manager: Arc::new(HttpDownloadManager::new(download_dir)),
+            })
+        }
+
+        #[cfg(any(target_os = "android", target_os = "ios"))]
+        {
+            // Mobile: librqbit stores pieces in cache_dir; completed files are
+            // exported to download_dir via the export_file command.
+            let session = Session::new_with_opts(_cache_dir.clone(), session_options).await?;
+            Ok(Self {
+                session,
+                server_port: RwLock::new(0),
+                monitored_torrents: RwLock::new(HashSet::new()),
+                download_dir: RwLock::new(download_dir.clone()),
+                speed_limit_down: RwLock::new(None),
+                speed_limit_up: RwLock::new(None),
+                http_download_manager: Arc::new(HttpDownloadManager::new(download_dir)),
             })
         }
     }
 
     pub fn torrent(&self, info_hash: &str) -> Result<Arc<ManagedTorrent>> {
-        let id = Id20::from_str(info_hash)
-            .map(TorrentIdOrHash::Hash)
-            .map_err(anyhow::Error::from)?;
+        let id = Id20::from_str(info_hash).map(TorrentIdOrHash::Hash)?;
 
         self.session
             .get(id)
