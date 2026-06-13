@@ -1,5 +1,18 @@
+mod download;
+mod http_download;
+mod proxy;
 mod server;
 mod state;
+
+use download::{
+    get_active_downloads, get_default_download_dir, get_download_dir, list_download_files,
+    open_in_file_manager, pause_all_downloads, resume_all_downloads, set_global_speed_limit,
+    export_file,
+};
+use http_download::{
+    http_download_add, http_download_list, http_download_pause, http_download_remove,
+    http_download_resume,
+};
 
 use std::{collections::HashSet, path::Path, sync::Arc, time::Duration};
 
@@ -384,6 +397,7 @@ async fn open_with_system_player(
         return Err("Use native bridge instead".to_string());
     }
 
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     Ok(())
 }
 
@@ -393,10 +407,12 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let cache_dir = app.path().cache_dir()?.join("torrents");
+            let download_dir = get_default_download_dir();
 
             std::fs::create_dir_all(&cache_dir)?;
+            std::fs::create_dir_all(&download_dir).ok();
 
-            let state = Arc::new(tauri::async_runtime::block_on(AppState::new(cache_dir))?);
+            let state = Arc::new(tauri::async_runtime::block_on(AppState::new(cache_dir, download_dir))?);
             let port = tauri::async_runtime::block_on(server::start_server(state.clone()))?;
 
             *state.server_port.write() = port;
@@ -413,7 +429,20 @@ pub fn run() {
             resume_torrent,
             stop_torrent,
             get_stream_url,
-            open_with_system_player
+            open_with_system_player,
+            get_download_dir,
+            list_download_files,
+            get_active_downloads,
+            set_global_speed_limit,
+            pause_all_downloads,
+            resume_all_downloads,
+            export_file,
+            open_in_file_manager,
+            http_download_add,
+            http_download_pause,
+            http_download_resume,
+            http_download_remove,
+            http_download_list,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
