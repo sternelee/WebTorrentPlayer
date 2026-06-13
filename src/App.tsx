@@ -58,6 +58,11 @@ import {
   getRecommendedPlayers,
 } from "./lib/native-player";
 import {
+  probeMpv,
+  createMpvBridge,
+  type MpvBridge,
+} from "./lib/mpv";
+import {
   refreshDownloads,
   fetchDownloadDir,
   setSpeedLimit,
@@ -505,8 +510,12 @@ function App() {
   const [pendingAutoPlaySource, setPendingAutoPlaySource] = createSignal("");
   const [lastAudibleVolume, setLastAudibleVolume] = createSignal(1);
   const [isSearchPopupOpen, setIsSearchPopupOpen] = createSignal(false);
+  const [mpvAvailable, setMpvAvailable] = createSignal(false);
+  const [useMpv, setUseMpv] = createSignal(false);
   let player: TorrentPlayerElement | undefined;
   let playerSurface: HTMLDivElement | undefined;
+  let mpvHost: HTMLDivElement | undefined;
+  let mpvBridge: MpvBridge | null = null;
   let torrentFileInput: HTMLInputElement | undefined;
   let subtitleMenuRef: HTMLDivElement | undefined;
   let networkNoticeTimeout: number | undefined;
@@ -754,6 +763,9 @@ function App() {
     setError(null);
     setExternalPlayerError(null);
 
+    // Tear down any previous mpv session first.
+    destroyMpvBridge();
+
     try {
       const url = await invoke<string>("select_torrent_file", {
         infoHash,
@@ -770,17 +782,25 @@ function App() {
         setNeedsExternalPlayer(needsExternal);
         if (needsExternal) {
           console.log(`[Video] ${file.name} requires external player`);
+          if (mpvAvailable()) {
+            setUseMpv(true);
+            await initMpvBridge(url, file.name);
+          }
         }
       } else {
         setNeedsExternalPlayer(false);
+        setUseMpv(false);
       }
     } catch (invokeError) {
       setError(String(invokeError));
       setNeedsExternalPlayer(false);
+      setUseMpv(false);
     } finally {
       setIsSelecting(false);
     }
   }
+
+
 
   async function handlePause() {
     const infoHash = currentInfoHash();
@@ -791,6 +811,38 @@ function App() {
     } catch (invokeError) {
       setError(String(invokeError));
     }
+  }
+
+  async function initMpvBridge(url: string, _title: string) {
+    if (!mpvHost) return;
+    if (mpvBridge) {
+      mpvBridge.destroy();
+      mpvBridge = null;
+    }
+    mpvBridge = createMpvBridge();
+    mpvBridge.attach(mpvHost);
+
+    const unsubscribe = mpvBridge.subscribe((snapshot) => {
+      setPlayerDuration(snapshot.durationSec);
+      setPlayerCurrentTime(snapshot.positionSec);
+      setPlayerVolume(snapshot.volume);
+      setPlayerMuted(snapshot.muted);
+      setPlayerPaused(snapshot.paused || snapshot.status === "ended");
+    });
+
+    // Keep a reference so it is not garbage-collected.
+    (mpvBridge as unknown as { _unsubscribe?: () => void })._unsubscribe =
+      unsubscribe;
+
+    await mpvBridge.load({ url });
+  }
+
+  function destroyMpvBridge() {
+    if (mpvBridge) {
+      mpvBridge.destroy();
+      mpvBridge = null;
+    }
+    setUseMpv(false);
   }
 
   async function handleResume() {
@@ -810,6 +862,7 @@ function App() {
 
     try {
       await invoke("stop_torrent", { infoHash });
+      destroyMpvBridge();
       setCurrentInfoHash(null);
       setMetadata(null);
       setStats(null);
@@ -826,6 +879,11 @@ function App() {
   function retryStream() {
     const source = videoSrc();
     if (!source) return;
+
+    if (useMpv() && mpvBridge) {
+      void mpvBridge.load({ url: source });
+      return;
+    }
 
     setVideoSrc("");
     window.setTimeout(() => setVideoSrc(source), 100);
@@ -899,6 +957,15 @@ function App() {
   }
 
   async function handleTogglePlayback() {
+    if (useMpv() && mpvBridge) {
+      if (playerPaused()) {
+        mpvBridge.play();
+      } else {
+        mpvBridge.pause();
+      }
+      return;
+    }
+
     const playerElement = player;
     if (!playerElement) return;
 
@@ -914,24 +981,39 @@ function App() {
   }
 
   function handleSeek(event: Event) {
+    const nextTime = Number((event.currentTarget as HTMLInputElement).value);
+
+    if (useMpv() && mpvBridge) {
+      mpvBridge.seek(nextTime);
+      setPlayerCurrentTime(nextTime);
+      return;
+    }
+
     const playerElement = player;
     if (!playerElement) return;
 
-    const nextTime = Number((event.currentTarget as HTMLInputElement).value);
     playerElement.currentTime = nextTime;
     setPlayerCurrentTime(nextTime);
   }
 
   function handleVolumeChange(event: Event) {
-    const playerElement = player;
-    if (!playerElement) return;
-
     const nextVolume =
       Number((event.currentTarget as HTMLInputElement).value) / 100;
 
     if (nextVolume > 0) {
       setLastAudibleVolume(nextVolume);
     }
+
+    if (useMpv() && mpvBridge) {
+      mpvBridge.setVolume(nextVolume);
+      mpvBridge.setMuted(nextVolume === 0);
+      setPlayerVolume(nextVolume);
+      setPlayerMuted(nextVolume === 0);
+      return;
+    }
+
+    const playerElement = player;
+    if (!playerElement) return;
 
     playerElement.volume = nextVolume;
     playerElement.muted = nextVolume === 0;
@@ -941,6 +1023,18 @@ function App() {
   }
 
   function handleToggleMute() {
+    if (useMpv() && mpvBridge) {
+      const muted = playerMuted();
+      if (muted || playerVolume() === 0) {
+        const restoredVolume = Math.max(lastAudibleVolume(), 0.1);
+        mpvBridge.setVolume(restoredVolume);
+        mpvBridge.setMuted(false);
+      } else {
+        mpvBridge.setMuted(true);
+      }
+      return;
+    }
+
     const playerElement = player;
     if (!playerElement) return;
 
@@ -1010,7 +1104,15 @@ function App() {
   }
 
   async function handleToggleFullscreen() {
-    setPlayerFullscreen((value) => !value);
+    const next = !playerFullscreen();
+    setPlayerFullscreen(next);
+    if (useMpv() && mpvBridge) {
+      if (next) {
+        mpvBridge.requestFullscreen();
+      } else {
+        mpvBridge.exitFullscreen();
+      }
+    }
     revealPlayerChrome(3200);
   }
 
@@ -1042,6 +1144,8 @@ function App() {
   }
 
   createEffect(() => {
+    if (useMpv()) return;
+
     const playerElement = player;
     const source = selectedVideoSource();
 
@@ -1051,6 +1155,11 @@ function App() {
   });
 
   createEffect(() => {
+    if (useMpv()) {
+      setPendingAutoPlaySource("");
+      return;
+    }
+
     const source = selectedVideoSource()?.src ?? "";
 
     if (!source || !shouldAutoPlaySelectedSource()) {
@@ -1062,6 +1171,8 @@ function App() {
   });
 
   createEffect(() => {
+    if (useMpv()) return;
+
     const playerElement = player;
 
     if (!playerElement) return;
@@ -1169,6 +1280,8 @@ function App() {
   });
 
   createEffect(() => {
+    if (useMpv()) return;
+
     const playerElement = player;
     const source = videoSrc();
     const subtitleTrackFiles = subtitleFiles();
@@ -1198,6 +1311,8 @@ function App() {
   });
 
   createEffect(() => {
+    if (useMpv()) return;
+
     const playerElement = player;
     const subtitleIndex = selectedSubtitleIndex();
 
@@ -1322,6 +1437,17 @@ function App() {
     // Register built-in public torrent search sources (TPB, Knaben, YTS, EZTV, Nyaa, etc.)
     initializeSources();
 
+    // Probe native libmpv availability on desktop.
+    try {
+      const probe = await probeMpv();
+      setMpvAvailable(probe.available);
+      if (probe.available) {
+        console.log(`[mpv] available: ${probe.version ?? probe.binary}`);
+      }
+    } catch {
+      setMpvAvailable(false);
+    }
+
     const stopHttpDownload = await initHttpDownloadListener();
 
     const stopTick = await listen<TorrentTickPayload>(
@@ -1383,6 +1509,7 @@ function App() {
       clearPlayerChromeTimeout();
       stopAndroidNetwork();
       syncAndroidForegroundSession(null);
+      destroyMpvBridge();
       void stopTick();
       void stopMetadata();
       stopHttpDownload();
@@ -1567,21 +1694,32 @@ function App() {
               onPointerDown={handlePlayerSurfaceInteract}
               onPointerMove={handlePlayerSurfaceInteract}
             >
-              <media-player
-                ref={(element) => {
-                  player = element as TorrentPlayerElement;
-                }}
-                title={selectedFile()?.name ?? "P2P Stream"}
-                class="h-full w-full"
-                autoplay
-                playsinline
-                crossorigin
-              >
-                <media-provider />
-              </media-player>
+              <Show when={!useMpv()}>
+                <media-player
+                  ref={(element) => {
+                    player = element as TorrentPlayerElement;
+                  }}
+                  title={selectedFile()?.name ?? "P2P Stream"}
+                  class="h-full w-full"
+                  autoplay
+                  playsinline
+                  crossorigin
+                >
+                  <media-provider />
+                </media-player>
+              </Show>
+
+              <Show when={useMpv()}>
+                <div
+                  ref={(element) => {
+                    mpvHost = element as HTMLDivElement;
+                  }}
+                  class="absolute inset-0 z-0 h-full w-full"
+                />
+              </Show>
 
               {/* External Player Overlay */}
-              <Show when={needsExternalPlayer() && videoSrc()}>
+              <Show when={needsExternalPlayer() && videoSrc() && !useMpv()}>
                 <div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-sm">
                   <div class="flex max-w-md flex-col items-center gap-5 p-6 text-center">
                     <div class="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
@@ -1839,7 +1977,7 @@ function App() {
                             revealPlayerChrome(3200);
                             handleToggleSubtitleMenu();
                           }}
-                          disabled={subtitleFiles().length === 0}
+                          disabled={subtitleFiles().length === 0 || useMpv()}
                           aria-label={
                             selectedSubtitleFile()
                               ? i18nStore.t("player.toggleSubtitles")

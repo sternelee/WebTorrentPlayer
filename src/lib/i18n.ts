@@ -71,6 +71,8 @@ const dictionaries = {
       copyFailed: "Failed to copy link",
       noPlayerFound: "No video player found. Please install MX Player or VLC.",
       browserFallback: "Opening in browser...",
+      mpvNotAvailable: "libmpv not available",
+      playingWithMpv: "Playing with mpv",
     },
     search: {
       title: "Search Torrents",
@@ -162,6 +164,8 @@ const dictionaries = {
       copyFailed: "复制链接失败",
       noPlayerFound: "未找到视频播放器或浏览器",
       browserFallback: "正在使用浏览器打开...",
+      mpvNotAvailable: "libmpv 不可用",
+      playingWithMpv: "正在使用 mpv 播放",
     },
     search: {
       title: "搜索 BT 资源",

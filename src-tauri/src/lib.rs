@@ -4,6 +4,11 @@ mod proxy;
 mod server;
 mod state;
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+mod mpv;
+#[cfg(all(target_os = "macos", not(target_os = "ios")))]
+mod mpv_render_mac;
+
 use download::{
     get_active_downloads, get_default_download_dir, get_download_dir, list_download_files,
     open_in_file_manager, pause_all_downloads, resume_all_downloads, set_global_speed_limit,
@@ -417,6 +422,10 @@ pub fn run() {
 
             *state.server_port.write() = port;
             app.manage(state);
+
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            app.manage(mpv::MpvState::new());
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -443,6 +452,18 @@ pub fn run() {
             http_download_resume,
             http_download_remove,
             http_download_list,
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            mpv::mpv_probe,
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            mpv::mpv_start,
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            mpv::mpv_stop,
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            mpv::mpv_command,
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            mpv::mpv_set_property,
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            mpv::mpv_set_geometry,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
